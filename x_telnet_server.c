@@ -262,7 +262,7 @@ void	vTelnetInit(void) {
  * @param pvParameters
  */
 void	vTaskTelnet(void *pvParameters) {
-	IF_TRACK(debugAPPL_THREADS, messageTASK_START) ;
+	IF_TRACK(debugAPPL_THREADS, debugAPPL_MESS_UP) ;
 	TNetState = stateTELNET_INIT ;
 	while (xRtosVerifyState(taskTELNET)) {
 		vRtosWaitStatus(flagNET_L3) ;
@@ -367,7 +367,7 @@ void	vTaskTelnet(void *pvParameters) {
 			myASSERT(0) ;
 		}
 	}
-	IF_TRACK(debugAPPL_THREADS, messageTASK_DELETE) ;
+	IF_TRACK(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
 	xTelnetFlushBuf() ;
 	vTelnetDeInit() ;
 	vTaskDelete(NULL) ;

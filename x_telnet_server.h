@@ -16,7 +16,7 @@ extern "C" {
 // ########################################### Macros ##############################################
 
 #define	telnetPRIORITY					3
-#define	telnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 1536)
+#define	telnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 1408 + (myDEBUG * 640))
 #define telnetINTERVAL_MS				200
 
 // ####################################### Telnet COMMAND codes ####################################
