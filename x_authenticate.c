@@ -61,7 +61,7 @@ int32_t	xReadString(int fd, char * pcBuf, size_t Size, bool bEcho) {
 	return Idx ;
 }
 
-int32_t	xAutheticateObject(int fd, char * pcPrompt, char * pcKey, bool bEcho) {
+int32_t	xAutheticateObject(int fd, const char * pcPrompt, const char * pcKey, bool bEcho) {
 	char Buf[35] ;
 	if (pcPrompt) {
 		xdprintf(fd, pcPrompt) ;
@@ -76,7 +76,7 @@ int32_t	xAutheticateObject(int fd, char * pcPrompt, char * pcKey, bool bEcho) {
 	return erSUCCESS ;
 }
 
-int32_t	xAuthenticate(int fd, char * pcUsername, char * pcPassword, bool bEcho) {
+int32_t	xAuthenticate(int fd, const char * pcUsername, const char * pcPassword, bool bEcho) {
 	if (xAutheticateObject(fd, "UserID: ", pcUsername, 1) == erSUCCESS) {
 		return xAutheticateObject(fd, "PssWrd: ", pcPassword, bEcho) ;
 	}
