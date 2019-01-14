@@ -20,10 +20,10 @@
 
 char cBS[3] = { CHR_BS, CHR_SPACE, CHR_BS } ;
 
-int32_t	xReadString(int fd, char * pcBuf, size_t Size, bool bEcho) {
+int32_t	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 	uint8_t	Idx = 0, cChr ;
 	while (1) {
-		int32_t iRV = read(fd, &cChr, sizeof(cChr)) ;
+		int32_t iRV = read(sd, &cChr, sizeof(cChr)) ;
 		if (iRV == sizeof(uint8_t)) {
 			if (cChr == CHR_CR) {						// end of input
 				pcBuf[Idx] = CHR_NUL ;
@@ -45,9 +45,9 @@ int32_t	xReadString(int fd, char * pcBuf, size_t Size, bool bEcho) {
 			}
 			if (bEcho && (cChr != CHR_NUL)) {
 				if (cChr == CHR_BS) {
-					write(fd, cBS, sizeof(cBS)) ;
+					write(sd, cBS, sizeof(cBS)) ;
 				} else {
-					write(fd, &cChr, sizeof(cChr)) ;
+					write(sd, &cChr, sizeof(cChr)) ;
 				}
 			}
 		} else if ((iRV == erFAILURE) && (errno != EAGAIN)) {
@@ -56,17 +56,17 @@ int32_t	xReadString(int fd, char * pcBuf, size_t Size, bool bEcho) {
 		vTaskDelay(50) ;
 	}
 	if (bEcho && (cChr == CHR_CR)) {
-		write(fd, "\r\n", 2) ;
+		write(sd, "\r\n", 2) ;
 	}
 	return Idx ;
 }
 
-int32_t	xAutheticateObject(int fd, const char * pcPrompt, const char * pcKey, bool bEcho) {
+int32_t	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
 	char Buf[35] ;
 	if (pcPrompt) {
-		xdprintf(fd, pcPrompt) ;
+		xdprintf(sd, pcPrompt) ;
 	}
-	int32_t iRV = xReadString(fd, Buf, sizeof(Buf), bEcho) ;
+	int32_t iRV = xReadString(sd, Buf, sizeof(Buf), bEcho) ;
 	if (iRV <= 0) {
 		return erFAILURE ;
 	}
@@ -76,9 +76,9 @@ int32_t	xAutheticateObject(int fd, const char * pcPrompt, const char * pcKey, bo
 	return erSUCCESS ;
 }
 
-int32_t	xAuthenticate(int fd, const char * pcUsername, const char * pcPassword, bool bEcho) {
-	if (xAutheticateObject(fd, "UserID: ", pcUsername, 1) == erSUCCESS) {
-		return xAutheticateObject(fd, "PssWrd: ", pcPassword, bEcho) ;
+int32_t	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) {
+	if (xAutheticateObject(sd, "User: ", pcUsername, 1) == erSUCCESS) {
+		return xAutheticateObject(sd, "Pswd: ", pcPassword, bEcho) ;
 	}
 	return erFAILURE ;
 }

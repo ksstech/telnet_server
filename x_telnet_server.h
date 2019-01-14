@@ -17,81 +17,90 @@ extern "C" {
 
 #define	telnetPRIORITY					3
 #define	telnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 1408 + (myDEBUG * 640))
-#define telnetINTERVAL_MS				200
-
-// ####################################### Telnet COMMAND codes ####################################
-
-#define	telnetIAC						255				// Interpret As Command
-#define	telnetDONT						254
-#define	telnetDO						253
-#define	telnetWONT						252
-#define	telnetWILL						251
-#define	telnetSB						250				// SuBnegotiation
-#define	telnetGA						249				// Go Ahead
-#define	telnetEL						248				// Erase Line
-#define	telnetEC						247				// Erase Character
-#define	telnetAYT						246				// Are You There
-#define	telnetAO						245				// Abort Output
-#define	telnetIP						244				// Interrupt Process
-#define	telnetBRK						243				// NVT Character BReaK
-#define	telnetDM						242				// Data Mark
-#define	telnetNOP						241				// No OPeration
-#define	telnetSE						240				// Subnegotiation End
-
-// ####################################### Telnet OPTION codes #####################################
-
-#define	telnetOPT_ECHO					1				// ECHO
-#define	telnetOPT_SUP_GOAHEAD			3				// Suppress Go Ahead
-
-#define	telnetOPT_TERM_TYPE				24				// Terminal Type
-#define	telnetOPT_NAWS					31				// Negotiate About Window Size
-#define	telnetOPT_TERM_SPD				32				// Terminal Speed
-#define	telnetOPT_LINEMODE				34				// Support client side line editing
-#define	telnetOPT_OLD_ENVIRON			36				// Old Environment
-#define	telnetOPT_NEW_ENVIRON			39				// New Environment
-#define	telnetOPT_START_TLS				46
+#define	telnetMS_OPEN					1000
+#define	telnetMS_ACCEPT					500
+#define	telnetMS_OPTIONS				500
+#define	telnetMS_READ_WRITE				70
 
 // ######################################### enumerations ##########################################
 
-enum {
-	stateTELNET_INIT,
-	stateTELNET_WAITING,
-	stateTELNET_OPTIONS,
-	stateTELNET_IAC,
-	stateTELNET_OPT,
-	stateTELNET_SB,
-	stateTELNET_OPTDAT,
-	stateTELNET_SE,
-	stateTELNET_MAX,
-	stateTELNET_AUTHEN,
-	stateTELNET_RUNNING,
-	stateTELNET_CLOSE,
+enum tnetCMD {
+    tnetSE        		= 240,				// Subnegotiation End
+    tnetNOP        		= 241,				// No OPeration
+    tnetDM        		= 242,				// Data Mark
+    tnetBRK        		= 243,				// NVT Character BReaK
+    tnetIP        		= 244,				// Interrupt Process
+    tnetAO        		= 245,				// Abort Output
+    tnetAYT       		= 246,				// Are You There
+    tnetEC        		= 247,				// Erase Character
+    tnetEL        		= 248,				// Erase Line
+    tnetGA        		= 249,				// Go Ahead
+    tnetSB        		= 250,				// SuBnegotiation
+    tnetWILL        	= 251,
+    tnetWONT        	= 252,
+    tnetDO        		= 253,
+    tnetDONT        	= 254,
+	tnetIAC				= 255,				// Interpret As Command
+} ;
+
+enum tnetOPT {
+	tnetOPT_ECHO		= 1,
+	tnetOPT_SGA			= 3,
+	tnetOPT_TTYPE		= 24,
+	tnetOPT_NAWS		= 31,
+	tnetOPT_TSPEED		= 32,
+	tnetOPT_LMODE		= 34,
+	tnetOPT_OLD_ENV		= 36,
+	tnetOPT_NEW_ENV		= 39,
+	tnetOPT_STRT_TLS	= 46,
+	tnetOPT_MAX_VAL,
+	tnetOPT_UNDEF		= 255,
+} ;
+
+enum tnetSTATE {
+	tnetSTATE_INIT,
+	tnetSTATE_WAITING,
+	tnetSTATE_OPTIONS,
+	tnetSTATE_AUTHEN,
+	tnetSTATE_RUNNING,
+} ;
+
+enum tnetSUBST {
+	tnetSUBST_CHECK,
+	tnetSUBST_IAC,
+	tnetSUBST_OPT,
+	tnetSUBST_SB,
+	tnetSUBST_OPTDAT,
+	tnetSUBST_SE,
 } ;
 
 // ########################################## structures ###########################################
 
+typedef struct opts_s {
+	uint8_t		val[10] ;
+	const char *name[10] ;
+} opts_t ;
+
 typedef	struct tnet_state {
 	sock_ctx_t	sCtx ;
 	uint8_t		optdata[35] ;
-	uint8_t		code ;
 	uint8_t		optlen ;
-	union {
+	uint8_t		code ;
+	uint8_t		options[(tnetOPT_MAX_VAL+3)/4] ;
+	union {												// internal flags
 		struct {
 			uint8_t	TxNow	: 1 ;
-			uint8_t	SupGA	: 1 ;
+			uint8_t	Running	: 1 ;
 		} ;
 		uint8_t		flag ;
-	};
+	} ;
 } tnet_con_t ;
-
-extern uint8_t	TNetState ;
 
 // ######################################## global variables #######################################
 
 
 // ################################### GLOBAL Function Prototypes ##################################
 
-void	vTelnetInit(void) ;
 void	vTelnetDeInit(void) ;
 
 void	vTaskTelnet(void * pvParameters) ;
