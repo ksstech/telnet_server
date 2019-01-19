@@ -57,22 +57,9 @@ enum tnetOPT {
 	tnetOPT_UNDEF		= 255,
 } ;
 
-enum tnetSTATE {
-	tnetSTATE_INIT,
-	tnetSTATE_WAITING,
-	tnetSTATE_OPTIONS,
-	tnetSTATE_AUTHEN,
-	tnetSTATE_RUNNING,
-} ;
+enum tnetSTATE { tnetSTATE_DEINIT = 1, tnetSTATE_INIT, tnetSTATE_WAITING, tnetSTATE_OPTIONS, tnetSTATE_AUTHEN, tnetSTATE_RUNNING } ;
 
-enum tnetSUBST {
-	tnetSUBST_CHECK,
-	tnetSUBST_IAC,
-	tnetSUBST_OPT,
-	tnetSUBST_SB,
-	tnetSUBST_OPTDAT,
-	tnetSUBST_SE,
-} ;
+enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB, tnetSUBST_OPTDAT, tnetSUBST_SE } ;
 
 // ########################################## structures ###########################################
 
@@ -100,8 +87,6 @@ typedef	struct tnet_state {
 
 
 // ################################### GLOBAL Function Prototypes ##################################
-
-void	vTelnetDeInit(void) ;
 
 void	vTaskTelnet(void * pvParameters) ;
 void	vTaskTelnetInit(void) ;

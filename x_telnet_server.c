@@ -15,6 +15,10 @@
 
 #include	<unistd.h>
 #include	<string.h>
+#include	<sys/errno.h>
+
+//#include	"esp_panic.h"
+//#define	tnetSET_STATE(x)	esp_clear_watchpoint(0);TNetState=x;myASSERT(TNetState==x);esp_set_watchpoint(0,&TNetState,1,ESP_WATCHPOINT_STORE);
 
 /* Documentation links
  * Obsolete:
@@ -26,7 +30,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0x0000
+#define	debugFLAG						0xC000
 #define	debugTRACK						(debugFLAG & 0x0001)
 #define	debugPARSE						(debugFLAG & 0x0002)
 #define	debugSTATE						(debugFLAG & 0x0004)
@@ -58,20 +62,17 @@ static tnet_con_t	sTerm = { 0 } ;
 static uint8_t		TNetState ;
 static uint8_t		TNetSubSt ;
 
+
 // ####################################### private functions #######################################
 
-void	vTelnetCloseClient(void) {
-	vRtosClearStatus(flagNET_TNET_CLNT | flagNET_AUTHENTICATED) ;
+void	vTelnetDeInit(int32_t eCode) {
+	IF_CTRACK(debugRESULT, "err=%d '%s'",  eCode, strerror(eCode)) ;
 	xNetClose(&sTerm.sCtx) ;
-	TNetState = tnetSTATE_WAITING ;
+	vRtosClearStatus(flagNET_TNET_CLNT | flagNET_AUTHENTICATED) ;
 	sTerm.Running = 0 ;
-	IF_CTRACK(debugTRACK, "close client") ;
-}
 
-void	vTelnetDeInit(void) {
-	vTelnetCloseClient() ;
-	vRtosClearStatus(flagNET_TNET_SERV) ;
 	xNetClose(&sServTNetCtx) ;
+	vRtosClearStatus(flagNET_TNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
 	IF_CTRACK(debugTRACK, "deinit") ;
 }
@@ -160,8 +161,7 @@ void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
 		xTelnetSetOption(opt, cmd) ;
 		vTelnetUpdateStats() ;
 	} else {
-		vTelnetDeInit() ;
-		IF_CTRACK(debugRESULT, "iRV=%d", iRV) ;
+		vTelnetDeInit(iRV) ;
 	}
 }
 
@@ -268,14 +268,18 @@ int32_t	xTelnetParseChar(int32_t cChr) {
  */
 void	vTaskTelnet(void *pvParameters) {
 	IF_TRACK(debugAPPL_THREADS, debugAPPL_MESS_UP) ;
-	int32_t	iRV ;
+	int32_t	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
 	while (xRtosVerifyState(taskTELNET)) {
 		vRtosWaitStatus(flagNET_L3) ;
 		switch(TNetState) {
+		case tnetSTATE_DEINIT:
+			vTelnetDeInit(iRV) ;
+			/* no break */
+
 		case tnetSTATE_INIT:
-			IF_CTRACK(debugTRACK, "init") ;
+			IF_CTRACK(debugTRACK, "Init Start") ;
 			memset(&sServTNetCtx, 0 , sizeof(sServTNetCtx)) ;
 			sServTNetCtx.sa_in.sin_family	= AF_INET ;
 			sServTNetCtx.type				= SOCK_STREAM ;
@@ -285,9 +289,13 @@ void	vTaskTelnet(void *pvParameters) {
 			sServTNetCtx.d_open				= 1 ;
 			sServTNetCtx.d_read				= 1 ;
 			sServTNetCtx.d_write			= 1 ;
+			sServTNetCtx.d_close			= 1 ;
+			sServTNetCtx.d_accept			= 1 ;
+			sServTNetCtx.d_select			= 1 ;
 		#endif
-			int32_t	iRetVal = xNetOpen(&sServTNetCtx) ;			// default blocking state
-			if (iRetVal < erSUCCESS) {
+			iRV = xNetOpen(&sServTNetCtx) ;			// default blocking state
+			if (iRV < erSUCCESS) {
+				TNetState = tnetSTATE_DEINIT ;
 				IF_CTRACK(debugTRACK, "OPEN fail") ;
 				vTaskDelay(pdMS_TO_TICKS(telnetMS_OPEN)) ;
 				break ;
@@ -295,43 +303,43 @@ void	vTaskTelnet(void *pvParameters) {
 			vRtosSetStatus(flagNET_TNET_SERV) ;
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
-			IF_CTRACK(debugTRACK, "waiting") ;
+			IF_CTRACK(debugTRACK, "Init OK, waiting") ;
 			/* no break */
 
 		case tnetSTATE_WAITING:
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, telnetMS_ACCEPT) ;
-			if ((sServTNetCtx.error == EAGAIN) ||
-				(sServTNetCtx.error == ECONNABORTED)) {
-				break ;
-			} else if (iRV < erSUCCESS) {
-				vTelnetDeInit() ;
-				IF_CTRACK(debugRESULT, "iRV=%d", iRV) ;
+			if (iRV < erSUCCESS) {
+				if ((sServTNetCtx.error != EAGAIN) &&
+					(sServTNetCtx.error != ECONNABORTED)) {
+					iRV = sServTNetCtx.error ;
+					TNetState = tnetSTATE_DEINIT ;
+					IF_CTRACK(debugTRACK, "ACCEPT failed") ;
+				}
 				break ;
 			}
-
 			vRtosSetStatus(flagNET_TNET_CLNT) ;
 
 			// setup timeout for processing options
 			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, telnetMS_OPTIONS) ;
 			if (iRV != erSUCCESS) {
-				vTelnetDeInit() ;
-				IF_CTRACK(debugRESULT, "iRV=%d", iRV) ;
+				TNetState = tnetSTATE_DEINIT ;
+				IF_CTRACK(debugTRACK, "Receive tOut failed") ;
 				break ;
 			}
 			TNetState = tnetSTATE_OPTIONS ;			// and start processing options
 			TNetSubSt = tnetSUBST_CHECK ;
-			IF_CTRACK(debugTRACK, "connected") ;
+			IF_CTRACK(debugTRACK, "Accept OK") ;
 			/* no break */
 
 		case tnetSTATE_OPTIONS:
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
 				if (sTerm.sCtx.error != EAGAIN) {	// socket closed or error (excl EAGAIN)
-					vTelnetDeInit() ;
+					iRV = sTerm.sCtx.error ;
+					TNetState = tnetSTATE_DEINIT ;
 					break ;
 				}
-				/* At this point (EAGAIN) no char received but, unless we have completed a full OPTIONS
-				 * phase ie back at tnetSUBST_CHECK, we should try again....  */
+				/* EAGAIN so unless completed OPTIONS phase (tnetSUBST_CHECK) try again */
 				if (TNetSubSt != tnetSUBST_CHECK) {
 					break ;
 				}
@@ -339,25 +347,25 @@ void	vTaskTelnet(void *pvParameters) {
 				if (xTelnetParseChar(cChr) == erSUCCESS) {
 					break ;
 				}
-				/* at this stage we are still in OPTIONS, have read a character and it was
-				 * NOT parsed as a valid OPTION char, then HWHAP !!! */
+				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
 				IF_myASSERT(debugSTATE && TNetSubSt != tnetSUBST_CHECK, 0) ;
 			}
 			// setup timeout for processing normal comms
-			if (xNetSetRecvTimeOut(&sTerm.sCtx, telnetMS_READ_WRITE) != erSUCCESS) {
-				vTelnetDeInit() ;
+			if ((iRV = xNetSetRecvTimeOut(&sTerm.sCtx, telnetMS_READ_WRITE)) != erSUCCESS) {
+				TNetState = tnetSTATE_DEINIT ;
 				break ;
 			}
-			TNetState = tnetSTATE_AUTHEN ;	// no char, start authenticate
+			TNetState = tnetSTATE_AUTHEN ;				// no char, start authenticate
 			TNetSubSt = tnetSUBST_CHECK ;
+			IF_CTRACK(debugTRACK, "Options OK") ;
 			/* no break */
 
 		case tnetSTATE_AUTHEN:
 #if		(configAUTHENTICATE == 1)
 			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
-					vTelnetDeInit() ;
-					IF_CTRACK(debugRESULT, "err=%d '%s'",  errno, strerror(errno)) ;
+					iRV = errno ;
+					TNetState = tnetSTATE_DEINIT ;
 				}
 				break ;
 			}
@@ -365,8 +373,8 @@ void	vTaskTelnet(void *pvParameters) {
 #endif
 			// After all options and authentication has been done, empty the buffer to the client
 			if (sBufStdOut.Used) {
-				if (xTelnetFlushBuf() != erSUCCESS) {
-					vTelnetDeInit() ;
+				if ((iRV = xTelnetFlushBuf()) != erSUCCESS) {
+					TNetState = tnetSTATE_DEINIT ;
 					break ;
 				}
 			}
@@ -377,8 +385,9 @@ void	vTaskTelnet(void *pvParameters) {
 			// Step 1: read a single character
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
-				if (sTerm.sCtx.error != EAGAIN) {
-					vTelnetDeInit() ;				// socket closed or error (but not EAGAIN)
+				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
+					iRV = sTerm.sCtx.error ;
+					TNetState = tnetSTATE_DEINIT ;
 				}
 				break ;
 			}
@@ -388,15 +397,16 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			// Step 3: Handle special (non-Telnet) characters
 			if (cChr == CHR_GS) {						// cntl + ']'
-				vTelnetDeInit() ;						// socket closed or error (but not EAGAIN)
+				iRV = EOF ;
+				TNetState = tnetSTATE_DEINIT ;
 				break ;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdOutLock(portMAX_DELAY) ;
 			vCommandInterpret(1, cChr) ;
 			if (sBufStdOut.Used) {						// empty the Xmt buf if required..
-				if (xTelnetFlushBuf() != erSUCCESS) {
-					vTelnetDeInit() ;
+				if ((iRV = xTelnetFlushBuf()) != erSUCCESS) {
+					TNetState = tnetSTATE_DEINIT ;
 				}
 			}
 			xStdOutUnLock() ;
@@ -408,7 +418,7 @@ void	vTaskTelnet(void *pvParameters) {
 	}
 	IF_TRACK(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
 	xTelnetFlushBuf() ;
-	vTelnetDeInit() ;
+	vTelnetDeInit(0) ;
 	vTaskDelete(NULL) ;
 }
 
