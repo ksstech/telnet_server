@@ -30,7 +30,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0xC000
+#define	debugFLAG						0x4000
 #define	debugTRACK						(debugFLAG & 0x0001)
 #define	debugPARSE						(debugFLAG & 0x0002)
 #define	debugSTATE						(debugFLAG & 0x0004)
