@@ -15,12 +15,13 @@ extern "C" {
 
 // ########################################### Macros ##############################################
 
-#define	telnetPRIORITY					3
-#define	telnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 1408 + (myDEBUG * 640))
-#define	telnetMS_OPEN					1000
-#define	telnetMS_ACCEPT					500
-#define	telnetMS_OPTIONS				500
-#define	telnetMS_READ_WRITE				70
+#define	tnetPRIORITY						3
+#define	tnetSTACK_SIZE						(configMINIMAL_STACK_SIZE + 1408 + (myDEBUG * 640))
+#define	tnetMS_OPEN							1000
+#define	tnetMS_ACCEPT						500
+#define	tnetMS_OPTIONS						500
+#define	tnetMS_READ_WRITE					70
+#define	tnetAUTHENTICATE					1
 
 // ######################################### enumerations ##########################################
 
@@ -35,7 +36,7 @@ enum tnetCMD {
     tnetEC        		= 247,				// Erase Character
     tnetEL        		= 248,				// Erase Line
     tnetGA        		= 249,				// Go Ahead
-    tnetSB        		= 250,				// SuBnegotiation
+    tnetSB        		= 250,				// Subnegotiation Begin
     tnetWILL        	= 251,
     tnetWONT        	= 252,
     tnetDO        		= 253,
@@ -44,8 +45,8 @@ enum tnetCMD {
 } ;
 
 enum tnetOPT {
-	tnetOPT_ECHO		= 1,
-	tnetOPT_SGA			= 3,
+	tnetOPT_ECHO		= 1,				// https://tools.ietf.org/pdf/rfc857.pdf
+	tnetOPT_SGA			= 3,				// https://tools.ietf.org/pdf/rfc858.pdf
 	tnetOPT_TTYPE		= 24,
 	tnetOPT_NAWS		= 31,
 	tnetOPT_TSPEED		= 32,
@@ -57,13 +58,15 @@ enum tnetOPT {
 	tnetOPT_UNDEF		= 255,
 } ;
 
+enum tnetOPT_VAL { valWILL, valWONT, valDO, valDONT } ;
+
 enum tnetSTATE { tnetSTATE_DEINIT = 1, tnetSTATE_INIT, tnetSTATE_WAITING, tnetSTATE_OPTIONS, tnetSTATE_AUTHEN, tnetSTATE_RUNNING } ;
 
 enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB, tnetSUBST_OPTDAT, tnetSUBST_SE } ;
 
 // ########################################## structures ###########################################
 
-typedef struct opts_s {
+typedef struct opts_s {									// used to decode known/supported options
 	uint8_t		val[10] ;
 	const char *name[10] ;
 } opts_t ;

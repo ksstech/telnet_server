@@ -32,7 +32,7 @@
 
 #define	debugFLAG						0x4000
 #define	debugTRACK						(debugFLAG & 0x0001)
-#define	debugPARSE						(debugFLAG & 0x0002)
+#define	debugOPTIONS					(debugFLAG & 0x0002)
 #define	debugSTATE						(debugFLAG & 0x0004)
 
 #define	debugPARAM						(debugFLAG & 0x4000)
@@ -61,7 +61,6 @@ static sock_ctx_t	sServTNetCtx = { 0 } ;
 static tnet_con_t	sTerm = { 0 } ;
 static uint8_t		TNetState ;
 static uint8_t		TNetSubSt ;
-
 
 // ####################################### private functions #######################################
 
@@ -98,7 +97,7 @@ void	xTelnetSetOption(uint8_t opt, uint8_t cmd) {
 	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
 	sTerm.options[Xidx]	|= (cmd - tnetWILL) << Sidx ;
-	IF_CPRINT(debugPARSE, " -> %s\n", codename[cmd - tnetWILL]) ;
+	IF_CPRINT(debugOPTIONS, " -> %s\n", codename[cmd - tnetWILL]) ;
 }
 
 /**
@@ -120,13 +119,26 @@ void	vTelnetUpdateStats(void) {
 	}
 }
 
+int32_t	xTelnetHandleSGA(void) {
+	int32_t iRV = xTelnetGetOption(tnetOPT_SGA) ;
+	if (iRV == valDONT || iRV == valWONT) {
+		char cGA = tnetGA ;
+		int32_t iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
+		if (iRV != sizeof(cGA)) {
+			vTelnetDeInit(iRV) ;
+			return erFAILURE ;
+		}
+	}
+	return erSUCCESS ;
+}
+
 /**
  * xTelnetFlushBuf() -- send any/all buffered data immediately after connection established
  * @return		non-zero positive value if nothing to send or all successfully sent
  *				0 (if socket closed) or other negative error code
  */
 int32_t	xTelnetFlushBuf(void) {
-	if (xRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == 0) {
+	if ((sBufStdOut.Used == 0) || xRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == 0) {
 		return erSUCCESS ;
 	}
 	int32_t	iRV	= sBufStdOut.IdxWR > sBufStdOut.IdxRD ?
@@ -144,7 +156,12 @@ int32_t	xTelnetFlushBuf(void) {
 			vTelnetUpdateStats() ;
 		}
 	}
+	xTelnetHandleSGA() ;										// if req, send GA
 	sBufStdOut.Used	= sBufStdOut.IdxWR = sBufStdOut.IdxRD = 0 ;	// reset pointers to reflect empty
+
+	if (iRV < erSUCCESS) {
+		TNetState = tnetSTATE_DEINIT ;
+	}
 	return iRV < erSUCCESS ? iRV : erSUCCESS ;
 }
 
@@ -171,6 +188,8 @@ void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  * @param option
  * @return		erSUCCESS or (-) error code or
  *
+ *	http://users.cs.cf.ac.uk/Dave.Marshall/Internet/node141.html
+ *
  *							-------	Sent if -------
  *	Received	Type		Agree		DisAgree
  *	WILL		Offer		DO			DONT
@@ -180,11 +199,14 @@ void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  *
  */
 void	vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
-	IF_CPRINT(debugPARSE, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
+	IF_CPRINT(debugOPTIONS, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
 	switch (opt) {
-	case tnetOPT_ECHO:									// MUST have functionality
-	case tnetOPT_SGA:
-		vTelnetSendOption(opt, cmd==tnetWILL || cmd==tnetWONT ? tnetDO : tnetWILL) ;
+	case tnetOPT_ECHO:		// Client must not (DONT) and server WILL
+		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDONT : tnetWILL) ;
+		break ;
+
+	case tnetOPT_SGA:		// Client must (DO) and server WILL
+		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDO : tnetWILL) ;
 		break ;
 
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)
@@ -204,14 +226,14 @@ void	vTelnetUpdateOption(void) {
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
 			vTerminalSetSize(ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
-			IF_CPRINT(debugPARSE, "NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+			IF_CPRINT(debugOPTIONS, "NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
 		} else {
-			IF_CPRINT(debugPARSE, "NAWS ignored Len %d != 4\n", sTerm.optlen ) ;
+			IF_CPRINT(debugOPTIONS, "NAWS ignored Len %d != 4\n", sTerm.optlen ) ;
 		}
 		break ;
 #endif
 	default:
-		IF_CPRINT(debugPARSE, "OPTION %d data (%d bytes)\n", sTerm.code, sTerm.optlen) ;
+		IF_CPRINT(debugOPTIONS, "OPTION %d data (%d bytes)\n", sTerm.code, sTerm.optlen) ;
 		IF_myASSERT(debugPARAM, 0) ;
 	}
 }
@@ -219,11 +241,9 @@ void	vTelnetUpdateOption(void) {
 int32_t	xTelnetParseChar(int32_t cChr) {
 	switch (TNetSubSt) {
 	case tnetSUBST_CHECK:
-		if (cChr == tnetIAC) {
-			TNetSubSt = tnetSUBST_IAC ;
-		} else {
-			return cChr ;									// RETURN the character
-		}
+		if (cChr == tnetIAC) 		{ TNetSubSt = tnetSUBST_IAC ;	}
+		else if (cChr == tnetGA)	{ return erSUCCESS ;			}
+		else						{ return cChr ;					}					// RETURN the character
 		break ;
 	case tnetSUBST_IAC:
 		switch (cChr) {
@@ -233,7 +253,7 @@ int32_t	xTelnetParseChar(int32_t cChr) {
 		case tnetDO:
 		case tnetDONT:	sTerm.code	= cChr ;	TNetSubSt = tnetSUBST_OPT ;		break ;
 		case tnetIAC:	TNetSubSt	= tnetSUBST_CHECK ;							return cChr ;	// RETURN 2nd IAC
-		default:		TNetSubSt	= tnetSUBST_CHECK ;	IF_myASSERT(debugSTATE, 0) ;
+		default:		TNetSubSt	= tnetSUBST_CHECK ;							IF_myASSERT(debugSTATE, 0) ;
 		}
 		break ;
 	case tnetSUBST_SB:	sTerm.code	= cChr ; sTerm.optlen = 0 ;	TNetSubSt = tnetSUBST_OPTDAT ;	break ;	// option ie NAWS, SPEED, TYPE etc
@@ -256,6 +276,30 @@ int32_t	xTelnetParseChar(int32_t cChr) {
 		// no break */
 	default:
 		IF_myASSERT(debugSTATE, 0) ;
+	}
+	return erSUCCESS ;
+}
+
+int32_t	xTelnetSetBaseline(void) {
+	/*					Putty			MikroTik
+	 *	WONT	DONT	no echo			local echo
+	 *	WILL	DONT	no echo			no echo
+	 */
+	int32_t iRV = xTelnetGetOption(tnetOPT_ECHO) ;
+	if (iRV == valWILL || iRV == valDONT) {
+		vTelnetSendOption(tnetOPT_ECHO, tnetDONT) ;
+		vTelnetSendOption(tnetOPT_ECHO, tnetWILL) ;
+	}
+	/*					Putty			MikroTik
+	 *	WONT	DONT	working			not working
+	 *	WILL	DONT	not working		not working
+	 *	WONT	DO		not working		not working
+	 *	WILL	DO		not working		not working
+	 */
+	iRV = xTelnetGetOption(tnetOPT_SGA) ;
+	if (iRV == valWONT || iRV == valDONT) {
+		vTelnetSendOption(tnetOPT_SGA, tnetDO) ;
+		vTelnetSendOption(tnetOPT_SGA, tnetWILL) ;
 	}
 	return erSUCCESS ;
 }
@@ -297,7 +341,7 @@ void	vTaskTelnet(void *pvParameters) {
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				IF_CTRACK(debugTRACK, "OPEN fail") ;
-				vTaskDelay(pdMS_TO_TICKS(telnetMS_OPEN)) ;
+				vTaskDelay(pdMS_TO_TICKS(tnetMS_OPEN)) ;
 				break ;
 			}
 			vRtosSetStatus(flagNET_TNET_SERV) ;
@@ -307,7 +351,7 @@ void	vTaskTelnet(void *pvParameters) {
 			/* no break */
 
 		case tnetSTATE_WAITING:
-			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, telnetMS_ACCEPT) ;
+			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetMS_ACCEPT) ;
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) &&
 					(sServTNetCtx.error != ECONNABORTED)) {
@@ -320,7 +364,7 @@ void	vTaskTelnet(void *pvParameters) {
 			vRtosSetStatus(flagNET_TNET_CLNT) ;
 
 			// setup timeout for processing options
-			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, telnetMS_OPTIONS) ;
+			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_OPTIONS) ;
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				IF_CTRACK(debugTRACK, "Receive tOut failed") ;
@@ -329,6 +373,8 @@ void	vTaskTelnet(void *pvParameters) {
 			TNetState = tnetSTATE_OPTIONS ;			// and start processing options
 			TNetSubSt = tnetSUBST_CHECK ;
 			IF_CTRACK(debugTRACK, "Accept OK") ;
+			xTelnetSetBaseline() ;
+			IF_CTRACK(debugTRACK, "Baseline sent") ;
 			/* no break */
 
 		case tnetSTATE_OPTIONS:
@@ -351,7 +397,7 @@ void	vTaskTelnet(void *pvParameters) {
 				IF_myASSERT(debugSTATE && TNetSubSt != tnetSUBST_CHECK, 0) ;
 			}
 			// setup timeout for processing normal comms
-			if ((iRV = xNetSetRecvTimeOut(&sTerm.sCtx, telnetMS_READ_WRITE)) != erSUCCESS) {
+			if ((iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_READ_WRITE)) != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				break ;
 			}
@@ -361,7 +407,7 @@ void	vTaskTelnet(void *pvParameters) {
 			/* no break */
 
 		case tnetSTATE_AUTHEN:
-#if		(configAUTHENTICATE == 1)
+#if		(tnetAUTHENTICATE == 1)
 			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					iRV = errno ;
@@ -372,16 +418,15 @@ void	vTaskTelnet(void *pvParameters) {
 			IF_CTRACK(debugTRACK, "Authentication OK") ;
 #endif
 			// After all options and authentication has been done, empty the buffer to the client
-			if (sBufStdOut.Used) {
-				if ((iRV = xTelnetFlushBuf()) != erSUCCESS) {
-					TNetState = tnetSTATE_DEINIT ;
-					break ;
-				}
+			if (xTelnetFlushBuf() != erSUCCESS) {
+				break ;
 			}
 			TNetState = tnetSTATE_RUNNING ;
 			/* no break */
 
 		case tnetSTATE_RUNNING:
+			// Step 0: if anything there for an earlier background event, display it...
+			xTelnetFlushBuf() ;
 			// Step 1: read a single character
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
@@ -404,11 +449,7 @@ void	vTaskTelnet(void *pvParameters) {
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdOutLock(portMAX_DELAY) ;
 			vCommandInterpret(1, cChr) ;
-			if (sBufStdOut.Used) {						// empty the Xmt buf if required..
-				if ((iRV = xTelnetFlushBuf()) != erSUCCESS) {
-					TNetState = tnetSTATE_DEINIT ;
-				}
-			}
+			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			break ;
 
@@ -422,12 +463,12 @@ void	vTaskTelnet(void *pvParameters) {
 	vTaskDelete(NULL) ;
 }
 
-void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", telnetSTACK_SIZE, 0, telnetPRIORITY, NULL, INT_MAX) ; }
+void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, INT_MAX) ; }
 
 void	vTelnetReport(int32_t Handle) {
 	if (xRtosCheckStatus(flagNET_TNET_CLNT)) {
 		xNetReport(Handle, &sTerm.sCtx, __FUNCTION__, 0, 0, 0) ;
-#if		(debugPARSE)
+#if		(debugOPTIONS)
 		for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
 			xdprintf(Handle, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 		}
