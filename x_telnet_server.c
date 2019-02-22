@@ -315,6 +315,8 @@ void	vTaskTelnet(void *pvParameters) {
 	int32_t	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
+	vRtosSetRunState(taskTELNET) ;
+
 	while (xRtosVerifyState(taskTELNET)) {
 		vRtosWaitStatus(flagNET_L3) ;
 		switch(TNetState) {
