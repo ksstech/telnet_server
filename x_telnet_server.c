@@ -141,10 +141,9 @@ int32_t	xTelnetFlushBuf(void) {
 	if ((sBufStdOut.Used == 0) || xRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == 0) {
 		return erSUCCESS ;
 	}
-	int32_t	iRV	= sBufStdOut.IdxWR > sBufStdOut.IdxRD ?
-					  sBufStdOut.IdxWR - sBufStdOut.IdxRD :		// single block
-					  sBufStdOut.IdxWR < sBufStdOut.IdxRD ?
-					  sBufStdOut.Size - sBufStdOut.IdxRD : 0 ;	// possibly 2 blocks..
+	int32_t	iRV	= sBufStdOut.IdxWR > sBufStdOut.IdxRD ? sBufStdOut.IdxWR - sBufStdOut.IdxRD :	// single block
+				  sBufStdOut.IdxWR < sBufStdOut.IdxRD ? sBufStdOut.Size - sBufStdOut.IdxRD	:	// possibly 2 blocks
+				  0 ;																			// nothing
 
 	if (iRV) {													// anything to write ?
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sBufStdOut), iRV) ;	// yes, write #1
@@ -419,7 +418,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			IF_CTRACK(debugTRACK, "Authentication OK") ;
 #endif
-			// After all options and authentication has been done, empty the buffer to the client
+			// All options and authentication done, empty the buffer to the client
 			if (xTelnetFlushBuf() != erSUCCESS) {
 				break ;
 			}
