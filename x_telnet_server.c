@@ -427,8 +427,10 @@ void	vTaskTelnet(void *pvParameters) {
 			/* no break */
 
 		case tnetSTATE_RUNNING:
-			// Step 0: if anything there for an earlier background event, display it...
+			// Step 0: if anything there from an earlier background event, display it...
+			xStdOutLock(portMAX_DELAY) ;
 			xTelnetFlushBuf() ;
+			xStdOutUnLock() ;
 			// Step 1: read a single character
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
