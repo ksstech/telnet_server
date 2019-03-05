@@ -470,20 +470,20 @@ void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE
 void	vTelnetReport(int32_t Handle) {
 	if (xRtosCheckStatus(flagNET_TNET_CLNT)) {
 		xNetReport(Handle, &sTerm.sCtx, __FUNCTION__, 0, 0, 0) ;
-#if		(debugOPTIONS)
-		for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
-			xdprintf(Handle, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
-		}
-		xdprintf(Handle, "\n") ;
-#endif
 	}
 	if (xRtosCheckStatus(flagNET_TNET_SERV)) {
 		xNetReport(Handle, &sServTNetCtx, __FUNCTION__, 0, 0, 0) ;
-		xdprintf(Handle, "\t\t\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 	}
+	xdprintf(Handle, "TNET Stats\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+#if		(debugOPTIONS)
+	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
+		xdprintf(Handle, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+	}
+	xdprintf(Handle, "\n") ;
+#endif
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)
 	terminfo_t	TermInfo ;
 	vTerminalGetInfo(&TermInfo) ;
-	xdprintf(Handle, "\t\t\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+	xdprintf(Handle, "TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
 }
