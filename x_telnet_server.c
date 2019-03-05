@@ -475,7 +475,6 @@ void	vTelnetReport(int32_t Handle) {
 	if (xRtosCheckStatus(flagNET_TNET_SERV)) {
 		xNetReport(Handle, &sServTNetCtx, __FUNCTION__, 0, 0, 0) ;
 	}
-	xdprintf(Handle, "TNET Stats\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 #if		(debugOPTIONS)
 	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
 		xdprintf(Handle, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
@@ -487,4 +486,5 @@ void	vTelnetReport(int32_t Handle) {
 	vTerminalGetInfo(&TermInfo) ;
 	xdprintf(Handle, "TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
+	xdprintf(Handle, "TNET Stats\tFSM=%d  maxTX=%u  maxRX=%u\n\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 }
