@@ -21,7 +21,7 @@ extern "C" {
 #define	tnetMS_ACCEPT						500
 #define	tnetMS_OPTIONS						500
 #define	tnetMS_READ_WRITE					70
-#define	tnetAUTHENTICATE					1
+#define	tnetAUTHENTICATE					0
 
 // ######################################### enumerations ##########################################
 
