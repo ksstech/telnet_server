@@ -16,7 +16,7 @@ extern "C" {
 // ########################################### Macros ##############################################
 
 #define	tnetPRIORITY						3
-#define	tnetSTACK_SIZE						(configMINIMAL_STACK_SIZE + 768 + (myDEBUG * 384))
+#define	tnetSTACK_SIZE						(configMINIMAL_STACK_SIZE + 1280 + (myDEBUG * 256))
 #define	tnetMS_OPEN							1000
 #define	tnetMS_ACCEPT						500
 #define	tnetMS_OPTIONS						500
