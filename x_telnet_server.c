@@ -451,7 +451,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdOutLock(portMAX_DELAY) ;
-			vCommandInterpret(1, cChr) ;
+			vCommandInterpret(cChr) ;
 			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			break ;
@@ -468,23 +468,23 @@ void	vTaskTelnet(void *pvParameters) {
 
 void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, INT_MAX) ; }
 
-void	vTelnetReport(int32_t Handle) {
+void	vTelnetReport(void) {
 	if (xRtosCheckStatus(flagNET_TNET_CLNT)) {
-		xNetReport(Handle, &sTerm.sCtx, __FUNCTION__, 0, 0, 0) ;
+		xNetReport(&sTerm.sCtx, __FUNCTION__, 0, 0, 0) ;
 	}
 	if (xRtosCheckStatus(flagNET_TNET_SERV)) {
-		xNetReport(Handle, &sServTNetCtx, __FUNCTION__, 0, 0, 0) ;
+		xNetReport(&sServTNetCtx, __FUNCTION__, 0, 0, 0) ;
 	}
 #if		(debugOPTIONS)
 	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
-		xdprintf(Handle, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+		xprintf("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 	}
-	xdprintf(Handle, "\n") ;
+	xprintf("\n") ;
 #endif
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)
 	terminfo_t	TermInfo ;
 	vTerminalGetInfo(&TermInfo) ;
-	xdprintf(Handle, "TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+	xprintf("TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
-	xdprintf(Handle, "TNET Stats\tFSM=%d  maxTX=%u  maxRX=%u\n\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+	xprintf("TNET Stats\tFSM=%d  maxTX=%u  maxRX=%u\n\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 }

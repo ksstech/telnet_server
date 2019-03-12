@@ -93,7 +93,7 @@ typedef	struct tnet_state {
 
 void	vTaskTelnet(void * pvParameters) ;
 void	vTaskTelnetInit(void) ;
-void	vTelnetReport(int32_t Handle) ;
+void	vTelnetReport(void) ;
 
 #ifdef __cplusplus
 }
