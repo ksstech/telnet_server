@@ -2,12 +2,13 @@
  * x_telnet_server.c - Telnet protocol support
  */
 
+#include	"task_control.h"
 #include	"x_config.h"
 
 #include	"x_telnet_server.h"
 #include	"x_authenticate.h"
-#include	"task_control.h"
 #include	"x_debug.h"
+#include	"x_printf.h"
 #include	"x_errors_events.h"
 #include	"x_syslog.h"
 #include	"x_terminal.h"
@@ -16,9 +17,6 @@
 #include	<unistd.h>
 #include	<string.h>
 #include	<sys/errno.h>
-
-//#include	"esp_panic.h"
-//#define	tnetSET_STATE(x)	esp_clear_watchpoint(0);TNetState=x;myASSERT(TNetState==x);esp_set_watchpoint(0,&TNetState,1,ESP_WATCHPOINT_STORE);
 
 /* Documentation links
  * Obsolete:
@@ -57,7 +55,7 @@ opts_t options = {
 
 // ####################################### Public Variables ########################################
 
-static sock_ctx_t	sServTNetCtx = { 0 } ;
+static netx_t	sServTNetCtx = { 0 } ;
 static tnet_con_t	sTerm = { 0 } ;
 static uint8_t		TNetState ;
 static uint8_t		TNetSubSt ;
@@ -314,7 +312,7 @@ void	vTaskTelnet(void *pvParameters) {
 	int32_t	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
-	vRtosSetRunState(taskTELNET) ;
+	vRtosSetStateRUN(taskTELNET) ;
 
 	while (xRtosVerifyState(taskTELNET)) {
 		vRtosWaitStatus(flagNET_L3) ;
@@ -460,9 +458,9 @@ void	vTaskTelnet(void *pvParameters) {
 			IF_myASSERT(debugSTATE, 0) ;
 		}
 	}
-	IF_SL_DBG(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
 	xTelnetFlushBuf() ;
 	vTelnetDeInit(0) ;
+	IF_SL_DBG(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
 	vTaskDelete(NULL) ;
 }
 
@@ -486,5 +484,5 @@ void	vTelnetReport(void) {
 	vTerminalGetInfo(&TermInfo) ;
 	xprintf("TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
-	xprintf("TNET Stats\tFSM=%d  maxTX=%u  maxRX=%u\n\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+	xprintf("\t\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 }

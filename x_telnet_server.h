@@ -72,7 +72,7 @@ typedef struct opts_s {									// used to decode known/supported options
 } opts_t ;
 
 typedef	struct tnet_state {
-	sock_ctx_t	sCtx ;
+	netx_t	sCtx ;
 	uint8_t		optdata[35] ;
 	uint8_t		optlen ;
 	uint8_t		code ;
