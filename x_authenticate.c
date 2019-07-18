@@ -66,7 +66,7 @@ int32_t	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 int32_t	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
 	char Buf[35] ;
 	if (pcPrompt) {
-		xdprintf(sd, pcPrompt) ;
+		dprintfx(sd, pcPrompt) ;
 	}
 	int32_t iRV = xReadString(sd, Buf, sizeof(Buf), bEcho) ;
 	if (iRV <= 0) {

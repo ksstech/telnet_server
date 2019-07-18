@@ -95,7 +95,7 @@ void	xTelnetSetOption(uint8_t opt, uint8_t cmd) {
 	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
 	sTerm.options[Xidx]	|= (cmd - tnetWILL) << Sidx ;
-	IF_CPRINT(debugOPTIONS, " -> %s\n", codename[cmd - tnetWILL]) ;
+	IF_PRINT(debugOPTIONS, " -> %s\n", codename[cmd - tnetWILL]) ;
 }
 
 /**
@@ -196,7 +196,7 @@ void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  *
  */
 void	vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
-	IF_CPRINT(debugOPTIONS, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
+	IF_PRINT(debugOPTIONS, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
 	switch (opt) {
 	case tnetOPT_ECHO:		// Client must not (DONT) and server WILL
 		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDONT : tnetWILL) ;
@@ -223,14 +223,14 @@ void	vTelnetUpdateOption(void) {
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
 			vTerminalSetSize(ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
-			IF_CPRINT(debugOPTIONS, "NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+			IF_PRINT(debugOPTIONS, "NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
 		} else {
-			IF_CPRINT(debugOPTIONS, "NAWS ignored Len %d != 4\n", sTerm.optlen ) ;
+			IF_PRINT(debugOPTIONS, "NAWS ignored Len %d != 4\n", sTerm.optlen ) ;
 		}
 		break ;
 #endif
 	default:
-		IF_CPRINT(debugOPTIONS, "OPTION %d data (%d bytes)\n", sTerm.code, sTerm.optlen) ;
+		IF_PRINT(debugOPTIONS, "OPTION %d data (%d bytes)\n", sTerm.code, sTerm.optlen) ;
 		IF_myASSERT(debugPARAM, 0) ;
 	}
 }
@@ -475,14 +475,14 @@ void	vTelnetReport(void) {
 	}
 #if		(debugOPTIONS)
 	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
-		xprintf("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+		printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 	}
-	xprintf("\n") ;
+	printfx("\n") ;
 #endif
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)
 	terminfo_t	TermInfo ;
 	vTerminalGetInfo(&TermInfo) ;
-	xprintf("TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+	printfx("TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
-	xprintf("\t\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+	printfx("\t\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 }
