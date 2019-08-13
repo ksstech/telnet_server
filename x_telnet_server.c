@@ -7,12 +7,12 @@
 
 #include	"x_telnet_server.h"
 #include	"x_authenticate.h"
-#include	"x_debug.h"
-#include	"x_printf.h"
 #include	"x_errors_events.h"
 #include	"x_syslog.h"
 #include	"x_terminal.h"
 #include	"x_retarget.h"
+
+#include	"hal_debug.h"
 
 #include	<unistd.h>
 #include	<string.h>
@@ -143,7 +143,7 @@ int32_t	xTelnetFlushBuf(void) {
 				  sBufStdOut.IdxWR < sBufStdOut.IdxRD ? sBufStdOut.Size - sBufStdOut.IdxRD	:	// possibly 2 blocks
 				  0 ;																			// nothing
 
-	if (iRV) {													// anything to write ?
+	if (iRV) {											// anything to write ?
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sBufStdOut), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
@@ -475,14 +475,14 @@ void	vTelnetReport(void) {
 	}
 #if		(debugOPTIONS)
 	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
-		printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+		PRINT("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 	}
-	printfx("\n") ;
+	PRINT("\n") ;
 #endif
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)
 	terminfo_t	TermInfo ;
 	vTerminalGetInfo(&TermInfo) ;
-	printfx("TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+	PRINT("TWin Info\tCx=%d  Cy=%d  Mx=%d  My=%d\n", TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
-	printfx("\t\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+	PRINT("\t\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 }

@@ -3,8 +3,8 @@
  */
 
 #include	"FreeRTOS_Support.h"
+
 #include	"x_authenticate.h"
-#include	"x_debug.h"
 #include	"x_printf.h"
 #include	"x_errors_events.h"
 #include	"x_sockets.h"
