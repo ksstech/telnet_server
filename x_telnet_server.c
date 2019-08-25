@@ -473,6 +473,8 @@ void	vTelnetReport(void) {
 	}
 	if (xRtosCheckStatus(flagNET_TNET_SERV)) {
 		xNetReport(&sServTNetCtx, __FUNCTION__, 0, 0, 0) ;
+	} else {
+		PRINT("%C%-15s%C ", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), __FUNCTION__, attrRESET) ;
 	}
 #if		(debugOPTIONS)
 	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
