@@ -11,6 +11,7 @@
 #include	"x_syslog.h"
 #include	"x_terminal.h"
 #include	"x_retarget.h"
+#include	"commands.h"
 
 #include	"hal_debug.h"
 
