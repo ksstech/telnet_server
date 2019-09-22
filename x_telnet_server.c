@@ -310,7 +310,7 @@ int32_t	xTelnetSetBaseline(void) {
  * @param pvParameters
  */
 void	vTaskTelnet(void *pvParameters) {
-	IF_SL_DBG(debugAPPL_THREADS, debugAPPL_MESS_UP) ;
+	IF_CTRACK(debugAPPL_THREADS, debugAPPL_MESS_UP) ;
 	int32_t	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
@@ -463,7 +463,7 @@ void	vTaskTelnet(void *pvParameters) {
 	}
 	xTelnetFlushBuf() ;
 	vTelnetDeInit(0) ;
-	IF_SL_DBG(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
+	IF_CTRACK(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
 	vTaskDelete(NULL) ;
 }
 
