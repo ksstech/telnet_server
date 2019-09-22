@@ -67,7 +67,7 @@ static uint8_t		TNetSubSt ;
 void	vTelnetDeInit(int32_t eCode) {
 	IF_CTRACK(debugRESULT, "err=%d '%s'",  eCode, strerror(eCode)) ;
 	xNetClose(&sTerm.sCtx) ;
-	vRtosClearStatus(flagNET_TNET_CLNT | flagNET_AUTHENTICATED) ;
+	xRtosClearStatus(flagNET_TNET_CLNT) ;
 	sTerm.Running = 0 ;
 
 	xNetClose(&sServTNetCtx) ;
