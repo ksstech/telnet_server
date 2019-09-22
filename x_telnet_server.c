@@ -428,6 +428,7 @@ void	vTaskTelnet(void *pvParameters) {
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...
 			xStdOutLock(portMAX_DELAY) ;
+			vReportFlags(cmndECHO | cmndFLAGS_TEST) ;
 			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			// Step 1: read a single character
@@ -451,7 +452,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdOutLock(portMAX_DELAY) ;
-			vCommandInterpret(cChr) ;
+			vCommandInterpret(cChr, cmndECHO | cmndFLAGS_TEST) ;
 			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			break ;
