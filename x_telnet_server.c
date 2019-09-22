@@ -71,7 +71,7 @@ void	vTelnetDeInit(int32_t eCode) {
 	sTerm.Running = 0 ;
 
 	xNetClose(&sServTNetCtx) ;
-	vRtosClearStatus(flagNET_TNET_SERV) ;
+	xRtosClearStatus(flagNET_TNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
 	IF_CTRACK(debugTRACK, "deinit") ;
 }
@@ -314,10 +314,10 @@ void	vTaskTelnet(void *pvParameters) {
 	int32_t	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
-	vRtosSetStateRUN(taskTELNET) ;
+	xRtosSetStateRUN(taskTELNET) ;
 
 	while (xRtosVerifyState(taskTELNET)) {
-		xRtosWaitStatus(flagNET_L3, portMAX_DELAY) ;
+		xRtosWaitStatus(flagL3_STA, portMAX_DELAY) ;
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
 			vTelnetDeInit(iRV) ;
@@ -345,7 +345,7 @@ void	vTaskTelnet(void *pvParameters) {
 				vTaskDelay(pdMS_TO_TICKS(tnetMS_OPEN)) ;
 				break ;
 			}
-			vRtosSetStatus(flagNET_TNET_SERV) ;
+			xRtosSetStatus(flagNET_TNET_SERV) ;
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
 			IF_CTRACK(debugTRACK, "Init OK, waiting") ;
@@ -362,7 +362,7 @@ void	vTaskTelnet(void *pvParameters) {
 				}
 				break ;
 			}
-			vRtosSetStatus(flagNET_TNET_CLNT) ;
+			xRtosSetStatus(flagNET_TNET_CLNT) ;
 
 			// setup timeout for processing options
 			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_OPTIONS) ;
