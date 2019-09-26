@@ -29,7 +29,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0x0000
+#define	debugFLAG						0xC000
 
 #define	debugOPTIONS					(debugFLAG & 0x0001)
 #define	debugSTATE						(debugFLAG & 0x0002)
@@ -65,7 +65,6 @@ static uint8_t		TNetSubSt ;
 // ####################################### private functions #######################################
 
 void	vTelnetDeInit(int32_t eCode) {
-	IF_CTRACK(debugRESULT, "err=%d '%s'",  eCode, strerror(eCode)) ;
 	xNetClose(&sTerm.sCtx) ;
 	xRtosClearStatus(flagNET_TNET_CLNT) ;
 	sTerm.Running = 0 ;
@@ -73,7 +72,7 @@ void	vTelnetDeInit(int32_t eCode) {
 	xNetClose(&sServTNetCtx) ;
 	xRtosClearStatus(flagNET_TNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
-	IF_CTRACK(debugTRACK, "deinit") ;
+	IF_CTRACK(debugTRACK, "deinit: err=%d '%s'",  eCode, strerror(eCode)) ;
 }
 
 const char * xTelnetFindName(uint8_t opt) {
