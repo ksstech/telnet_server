@@ -315,7 +315,7 @@ void	vTaskTelnet(void *pvParameters) {
 	TNetState = tnetSTATE_INIT ;
 	xRtosSetStateRUN(taskTELNET) ;
 
-	while (xRtosVerifyState(taskTELNET)) {
+	while (bRtosVerifyState(taskTELNET)) {
 		xRtosWaitStatus(flagL3_STA, portMAX_DELAY) ;
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
@@ -469,10 +469,10 @@ void	vTaskTelnet(void *pvParameters) {
 void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, INT_MAX) ; }
 
 void	vTelnetReport(void) {
-	if (xRtosCheckStatus(flagNET_TNET_CLNT)) {
+	if (bRtosCheckStatus(flagNET_TNET_CLNT)) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 	}
-	if (xRtosCheckStatus(flagNET_TNET_SERV)) {
+	if (bRtosCheckStatus(flagNET_TNET_SERV)) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
 	} else {
 		PRINT("%CTNETxxx%C\t", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), attrRESET) ;
