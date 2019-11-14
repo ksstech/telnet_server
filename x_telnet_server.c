@@ -329,7 +329,7 @@ void	vTaskTelnet(void *pvParameters) {
 	xRtosSetStateRUN(taskTELNET) ;
 
 	while (bRtosVerifyState(taskTELNET)) {
-		xRtosWaitStatus(flagL3_STA, portMAX_DELAY) ;
+		xRtosWaitStatus(flagL1 | flagL2_STA | flagL3_STA, portMAX_DELAY) ;
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
 			vTelnetDeInit(iRV) ;
