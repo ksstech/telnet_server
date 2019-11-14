@@ -77,7 +77,7 @@ void	vTelnetDeInit(int32_t eCode) {
 
 const char * xTelnetFindName(uint8_t opt) {
 	uint8_t idx ;
-	for (idx = 0; options.val[idx] != 0xFF; ++idx) {
+	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
 		if (options.val[idx] == opt) {
 			break ;
 		}
@@ -122,7 +122,7 @@ int32_t	xTelnetHandleSGA(void) {
 	int32_t iRV = xTelnetGetOption(tnetOPT_SGA) ;
 	if (iRV == valDONT || iRV == valWONT) {
 		char cGA = tnetGA ;
-		int32_t iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
+		iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
 		if (iRV != sizeof(cGA)) {
 			vTelnetDeInit(iRV) ;
 			return erFAILURE ;
@@ -137,7 +137,8 @@ int32_t	xTelnetHandleSGA(void) {
  *				0 (if socket closed) or other negative error code
  */
 int32_t	xTelnetFlushBuf(void) {
-	if ((xUBufAvail(&rtc_slow.sBufStdOut) == 0) || bRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == 0) {
+	if ((xUBufAvail(&rtc_slow.sBufStdOut) == 0) ||		// no characters there; OR
+		bRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == false) { // server or client not running
 		return erSUCCESS ;
 	}
 	int32_t	iRV	= rtc_slow.sBufStdOut.IdxWR > rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.IdxWR - rtc_slow.sBufStdOut.IdxRD :	// single block
@@ -195,6 +196,10 @@ void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  *	DO			Desire		WILL		WONT
  *	DONT		Desire		WONT		WILL
  *
+ * Telnet, as in MikroTik RouterOS, offer the following
+ *	Do SGA
+ *	Will TTYPE, NAWS, TSPEED, Remote Flow Control, LMODE, NEWENV
+ *	Do Status
  */
 void	vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
 	IF_PRINT(debugOPTIONS, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
@@ -419,6 +424,8 @@ void	vTaskTelnet(void *pvParameters) {
 #endif
 			// All options and authentication done, empty the buffer to the client
 			if (xTelnetFlushBuf() != erSUCCESS) {
+				iRV = errno ;
+				TNetState = tnetSTATE_DEINIT ;
 				break ;
 			}
 			TNetState = tnetSTATE_RUNNING ;
