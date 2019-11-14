@@ -144,7 +144,20 @@ int32_t	xTelnetFlushBuf(void) {
 	int32_t	iRV	= rtc_slow.sBufStdOut.IdxWR > rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.IdxWR - rtc_slow.sBufStdOut.IdxRD :	// single block
 				  rtc_slow.sBufStdOut.IdxWR < rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.Size - rtc_slow.sBufStdOut.IdxRD	:	// possibly 2 blocks
 				  0 ;																			// nothing
-
+#if		(configBUILD_WITH_NEW_CODE == 1)
+	if (iRV) {											// anything to write ?
+		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&rtc_slow.sBufStdOut), iRV) ;	// yes, write #1
+		vTelnetUpdateStats() ;
+		if ((iRV > 0) && 								// if #1 write successful AND
+			(rtc_slow.sBufStdOut.IdxWR < rtc_slow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
+			(rtc_slow.sBufStdOut.IdxWR > 0)) {			// something there for #2
+			iRV = xNetWrite(&sTerm.sCtx, (char *) rtc_slow.sBufStdOut.pBuf, rtc_slow.sBufStdOut.IdxWR) ;	// write #2 of 2
+			vTelnetUpdateStats() ;
+		}
+		xTelnetHandleSGA() ;							// if req, send GA
+	}
+	vUBufReset(&rtc_slow.sBufStdOut) ;					// reset pointers to reflect empty
+#else
 	if (iRV) {											// anything to write ?
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&rtc_slow.sBufStdOut), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
@@ -156,7 +169,8 @@ int32_t	xTelnetFlushBuf(void) {
 		}
 	}
 	xTelnetHandleSGA() ;								// if req, send GA
-	vUBufReset(&rtc_slow.sBufStdOut) ;							// reset pointers to reflect empty
+	vUBufReset(&rtc_slow.sBufStdOut) ;					// reset pointers to reflect empty
+#endif
 
 	if (iRV < erSUCCESS) {
 		TNetState = tnetSTATE_DEINIT ;
