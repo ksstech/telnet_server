@@ -244,10 +244,18 @@ void	vTelnetUpdateOption(void) {
 int32_t	xTelnetParseChar(int32_t cChr) {
 	switch (TNetSubSt) {
 	case tnetSUBST_CHECK:
+#if		(configBUILD_WITH_NEW_CODE == 1)
+		if (cChr == tnetIAC)
+			TNetSubSt = tnetSUBST_IAC ;
+		else if (cChr != tnetGA)
+			return cChr ;								// RETURN the character
+		break ;
+#else
 		if (cChr == tnetIAC) 		{ TNetSubSt = tnetSUBST_IAC ;	}
 		else if (cChr == tnetGA)	{ return erSUCCESS ;			}
 		else						{ return cChr ;					}					// RETURN the character
 		break ;
+#endif
 	case tnetSUBST_IAC:
 		switch (cChr) {
 		case tnetSB:	TNetSubSt	= tnetSUBST_SB ;							break ;
