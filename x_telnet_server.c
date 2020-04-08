@@ -144,7 +144,7 @@ int32_t	xTelnetFlushBuf(void) {
 	int32_t	iRV	= rtc_slow.sBufStdOut.IdxWR > rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.IdxWR - rtc_slow.sBufStdOut.IdxRD :	// single block
 				  rtc_slow.sBufStdOut.IdxWR < rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.Size - rtc_slow.sBufStdOut.IdxRD	:	// possibly 2 blocks
 				  0 ;																			// nothing
-#if		(configBUILD_WITH_NEW_CODE == 1)
+#if		(configBUILD_WITH_NEW_CODE  == 1)
 	if (iRV) {											// anything to write ?
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&rtc_slow.sBufStdOut), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
@@ -343,11 +343,13 @@ void	vTaskTelnet(void *pvParameters) {
 	xRtosSetStateRUN(taskTELNET) ;
 
 	while (bRtosVerifyState(taskTELNET)) {
-		xRtosWaitStatus(flagL1 | flagL2_STA | flagL3_STA, portMAX_DELAY) ;
+		if (TNetState != tnetSTATE_DEINIT) {
+			xRtosWaitStatusANY(flagL3_ANY, portMAX_DELAY) ;
+		}
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
 			vTelnetDeInit(iRV) ;
-			/* no break */
+			break ;					// must NOT fall through since the Lx status might have changed
 
 		case tnetSTATE_INIT:
 			IF_CTRACK(debugTRACK, "Init Start") ;
