@@ -2,16 +2,18 @@
  * x_telnet_server.c - Telnet protocol support
  */
 
-#include	"task_control.h"
 #include	"x_config.h"
-
+#include	"FreeRTOS_Support.h"
 #include	"x_telnet_server.h"
+#include	"task_control.h"
+
+#include	"commands.h"
 #include	"x_authenticate.h"
 #include	"x_errors_events.h"
 #include	"x_syslog.h"
+#include	"x_printf.h"
 #include	"x_terminal.h"
 #include	"x_retarget.h"
-#include	"commands.h"
 
 #include	"hal_debug.h"
 
@@ -298,7 +300,7 @@ int32_t	xTelnetParseChar(int32_t cChr) {
 			TNetSubSt = tnetSUBST_CHECK ;
 			break ;
 		}
-		// no break */
+		/* FALLTHRU */
 	default:
 		IF_myASSERT(debugSTATE, 0) ;
 	}
@@ -377,7 +379,7 @@ void	vTaskTelnet(void *pvParameters) {
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
 			IF_CTRACK(debugTRACK, "Init OK, waiting") ;
-			/* no break */
+			/* FALLTHRU */
 
 		case tnetSTATE_WAITING:
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetMS_ACCEPT) ;
@@ -404,7 +406,7 @@ void	vTaskTelnet(void *pvParameters) {
 			IF_CTRACK(debugTRACK, "Accept OK") ;
 			xTelnetSetBaseline() ;
 			IF_CTRACK(debugTRACK, "Baseline sent") ;
-			/* no break */
+			/* FALLTHRU */
 
 		case tnetSTATE_OPTIONS:
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
@@ -433,7 +435,7 @@ void	vTaskTelnet(void *pvParameters) {
 			TNetState = tnetSTATE_AUTHEN ;				// no char, start authenticate
 			TNetSubSt = tnetSUBST_CHECK ;
 			IF_CTRACK(debugTRACK, "Options OK") ;
-			/* no break */
+			/* FALLTHRU */
 
 		case tnetSTATE_AUTHEN:
 #if		(tnetAUTHENTICATE == 1) || (configPRODUCTION == 1)
@@ -453,7 +455,7 @@ void	vTaskTelnet(void *pvParameters) {
 				break ;
 			}
 			TNetState = tnetSTATE_RUNNING ;
-			/* no break */
+			/* FALLTHRU */
 
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...

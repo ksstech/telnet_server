@@ -1,6 +1,6 @@
-set(COMPONENT_SRCS  "x_autheticate.c"
-					"x_telnet_server.c")
-set(COMPONENT_ADD_INCLUDEDIRS)
-set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES)
-register_component()
+idf_component_register(SRCS x_authenticate.c x_telnet_server.c 
+							INCLUDE_DIRS . 
+							REQUIRES x_sockets buffers
+							PRIV_REQUIRES rtos-support printf common x_sockets irmacos syslog commands hal_esp32 statistics
+							)
+target_compile_options( ${COMPONENT_LIB} PRIVATE -Wimplicit-fallthrough=0 )
