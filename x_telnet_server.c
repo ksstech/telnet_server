@@ -10,8 +10,8 @@
 #include	"commands.h"
 #include	"x_authenticate.h"
 #include	"x_errors_events.h"
-#include	"x_syslog.h"
-#include	"x_printf.h"
+#include	"syslog.h"
+#include	"printfx.h"
 #include	"x_terminal.h"
 #include	"x_retarget.h"
 
