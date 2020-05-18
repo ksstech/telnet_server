@@ -148,7 +148,7 @@ int32_t	xTelnetFlushBuf(void) {
 				  0 ;																			// nothing
 #if		(configBUILD_WITH_NEW_CODE  == 1)
 	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&rtc_slow.sBufStdOut), iRV) ;	// yes, write #1
+		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCslow.sBufStdOut), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
 			(sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
