@@ -98,7 +98,7 @@ void	xTelnetSetOption(uint8_t opt, uint8_t cmd) {
 	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
 	sTerm.options[Xidx]	|= (cmd - tnetWILL) << Sidx ;
-	IF_PRINT(debugOPTIONS, " -> %s\n", codename[cmd - tnetWILL]) ;
+	IF_CPRINT(debugOPTIONS, " -> %s\n", codename[cmd - tnetWILL]) ;
 }
 
 /**
@@ -218,7 +218,7 @@ void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  *	Do Status
  */
 void	vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
-	IF_PRINT(debugOPTIONS, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
+	IF_CPRINT(debugOPTIONS, "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
 	switch (opt) {
 	case tnetOPT_ECHO:		// Client must not (DONT) and server WILL
 		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDONT : tnetWILL) ;
@@ -496,7 +496,6 @@ void	vTaskTelnet(void *pvParameters) {
 	xTelnetFlushBuf() ;
 	vTelnetDeInit(0) ;
 	IF_CTRACK(debugAPPL_THREADS, debugAPPL_MESS_DN) ;
-	IF_EXEC_1(configDELAY_TASK_DELETE > 0, vTaskDelay, configDELAY_TASK_DELETE) ;
 	vTaskDelete(NULL) ;
 }
 
