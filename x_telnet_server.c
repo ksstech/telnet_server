@@ -139,39 +139,39 @@ int32_t	xTelnetHandleSGA(void) {
  *				0 (if socket closed) or other negative error code
  */
 int32_t	xTelnetFlushBuf(void) {
-	if ((xUBufAvail(&rtc_slow.sBufStdOut) == 0) ||		// no characters there; OR
+	if ((xUBufAvail(&sRTCslow.sBufStdOut) == 0) ||		// no characters there; OR
 		bRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == false) { // server or client not running
 		return erSUCCESS ;
 	}
-	int32_t	iRV	= rtc_slow.sBufStdOut.IdxWR > rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.IdxWR - rtc_slow.sBufStdOut.IdxRD :	// single block
-				  rtc_slow.sBufStdOut.IdxWR < rtc_slow.sBufStdOut.IdxRD ? rtc_slow.sBufStdOut.Size - rtc_slow.sBufStdOut.IdxRD	:	// possibly 2 blocks
+	int32_t	iRV	= sRTCslow.sBufStdOut.IdxWR > sRTCslow.sBufStdOut.IdxRD ? sRTCslow.sBufStdOut.IdxWR - sRTCslow.sBufStdOut.IdxRD :	// single block
+				  sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD ? sRTCslow.sBufStdOut.Size - sRTCslow.sBufStdOut.IdxRD	:	// possibly 2 blocks
 				  0 ;																			// nothing
 #if		(configBUILD_WITH_NEW_CODE  == 1)
 	if (iRV) {											// anything to write ?
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&rtc_slow.sBufStdOut), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
-			(rtc_slow.sBufStdOut.IdxWR < rtc_slow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
-			(rtc_slow.sBufStdOut.IdxWR > 0)) {			// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) rtc_slow.sBufStdOut.pBuf, rtc_slow.sBufStdOut.IdxWR) ;	// write #2 of 2
+			(sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
+			(sRTCslow.sBufStdOut.IdxWR > 0)) {			// something there for #2
+			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCslow.sBufStdOut.pBuf, sRTCslow.sBufStdOut.IdxWR) ;	// write #2 of 2
 			vTelnetUpdateStats() ;
 		}
 		xTelnetHandleSGA() ;							// if req, send GA
 	}
-	vUBufReset(&rtc_slow.sBufStdOut) ;					// reset pointers to reflect empty
+	vUBufReset(&sRTCslow.sBufStdOut) ;					// reset pointers to reflect empty
 #else
 	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&rtc_slow.sBufStdOut), iRV) ;	// yes, write #1
+		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCslow.sBufStdOut), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
-			(rtc_slow.sBufStdOut.IdxWR < rtc_slow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
-			(rtc_slow.sBufStdOut.IdxWR > 0)) {					// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) rtc_slow.sBufStdOut.pBuf, rtc_slow.sBufStdOut.IdxWR) ;	// write #2 of 2
+			(sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
+			(sRTCslow.sBufStdOut.IdxWR > 0)) {					// something there for #2
+			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCslow.sBufStdOut.pBuf, sRTCslow.sBufStdOut.IdxWR) ;	// write #2 of 2
 			vTelnetUpdateStats() ;
 		}
 	}
 	xTelnetHandleSGA() ;								// if req, send GA
-	vUBufReset(&rtc_slow.sBufStdOut) ;					// reset pointers to reflect empty
+	vUBufReset(&sRTCslow.sBufStdOut) ;					// reset pointers to reflect empty
 #endif
 
 	if (iRV < erSUCCESS) {
