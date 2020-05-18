@@ -31,7 +31,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0xC000
+#define	debugFLAG						0xE003
 
 #define	debugOPTIONS					(debugFLAG & 0x0001)
 #define	debugSTATE						(debugFLAG & 0x0002)
@@ -241,19 +241,20 @@ void	vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
 
 void	vTelnetUpdateOption(void) {
 	switch (sTerm.code) {
-#if		(buildTERMINAL_CONTROLS_CURSOR == 1)		// NOT TESTED, check against RFC
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
+#if		(buildTERMINAL_CONTROLS_CURSOR == 1)		// NOT TESTED, check against RFC
 			vTerminalSetSize(ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
-			IF_PRINT(debugOPTIONS, "NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+			IF_CPRINT(debugOPTIONS, "Applied NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+#else
+			SL_INFO("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+#endif
 		} else {
-			IF_PRINT(debugOPTIONS, "NAWS ignored Len %d != 4\n", sTerm.optlen ) ;
+			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen ) ;
 		}
 		break ;
-#endif
 	default:
-		IF_PRINT(debugOPTIONS, "OPTION %d data (%d bytes)\n", sTerm.code, sTerm.optlen) ;
-		IF_myASSERT(debugPARAM, 0) ;
+		SL_ERR("Unsupported OPTION %d data (%d bytes)", sTerm.code, sTerm.optlen) ;
 	}
 }
 
