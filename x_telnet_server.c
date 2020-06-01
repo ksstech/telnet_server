@@ -461,7 +461,7 @@ void	vTaskTelnet(void *pvParameters) {
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...
 			xStdOutLock(portMAX_DELAY) ;
-			vReportFlags(cmndECHO | cmndFLAGS_TEST) ;
+			vFlagsReport(cmndECHO | cmndFLAGS_TEST) ;
 			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			// Step 1: read a single character
