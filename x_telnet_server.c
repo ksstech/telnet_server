@@ -31,7 +31,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0xE003
+#define	debugFLAG						0xC003
 
 #define	debugOPTIONS					(debugFLAG & 0x0001)
 #define	debugSTATE						(debugFLAG & 0x0002)
@@ -461,7 +461,7 @@ void	vTaskTelnet(void *pvParameters) {
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...
 			xStdOutLock(portMAX_DELAY) ;
-			vFlagsReport(cmndECHO | cmndFLAGS_TEST) ;
+			vCommandInterpret(CHR_NUL, true) ;			// force checking of flags
 			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			// Step 1: read a single character
@@ -485,7 +485,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdOutLock(portMAX_DELAY) ;
-			vCommandInterpret(cChr, cmndECHO | cmndFLAGS_TEST) ;
+			vCommandInterpret(cChr, true) ;
 			xTelnetFlushBuf() ;
 			xStdOutUnLock() ;
 			break ;
