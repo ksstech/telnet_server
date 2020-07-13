@@ -31,7 +31,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0xC003
+#define	debugFLAG						0xC000
 
 #define	debugOPTIONS					(debugFLAG & 0x0001)
 #define	debugSTATE						(debugFLAG & 0x0002)
@@ -301,7 +301,7 @@ int32_t	xTelnetParseChar(int32_t cChr) {
 			TNetSubSt = tnetSUBST_CHECK ;
 			break ;
 		}
-		/* FALLTHRU */
+		/* FALLTHRU */ /* no break */
 	default:
 		IF_myASSERT(debugSTATE, 0) ;
 	}
@@ -380,7 +380,7 @@ void	vTaskTelnet(void *pvParameters) {
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
 			IF_CTRACK(debugTRACK, "Init OK, waiting") ;
-			/* FALLTHRU */
+			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetMS_ACCEPT) ;
@@ -407,7 +407,7 @@ void	vTaskTelnet(void *pvParameters) {
 			IF_CTRACK(debugTRACK, "Accept OK") ;
 			xTelnetSetBaseline() ;
 			IF_CTRACK(debugTRACK, "Baseline sent") ;
-			/* FALLTHRU */
+			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
@@ -436,7 +436,7 @@ void	vTaskTelnet(void *pvParameters) {
 			TNetState = tnetSTATE_AUTHEN ;				// no char, start authenticate
 			TNetSubSt = tnetSUBST_CHECK ;
 			IF_CTRACK(debugTRACK, "Options OK") ;
-			/* FALLTHRU */
+			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
 #if		(tnetAUTHENTICATE == 1) || (configPRODUCTION == 1)
@@ -456,7 +456,7 @@ void	vTaskTelnet(void *pvParameters) {
 				break ;
 			}
 			TNetState = tnetSTATE_RUNNING ;
-			/* FALLTHRU */
+			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...
