@@ -13,9 +13,9 @@
 #include	"syslog.h"
 #include	"printfx.h"
 #include	"x_terminal.h"
-#include	"x_retarget.h"
 
 #include	"hal_debug.h"
+#include	"hal_rtc.h"
 
 #include	<unistd.h>
 #include	<string.h>
@@ -139,39 +139,39 @@ int32_t	xTelnetHandleSGA(void) {
  *				0 (if socket closed) or other negative error code
  */
 int32_t	xTelnetFlushBuf(void) {
-	if ((xUBufAvail(&sRTCslow.sBufStdOut) == 0) ||		// no characters there; OR
+	if ((xUBufAvail(&sRTCvars.sRTCbuf) == 0) ||		// no characters there; OR
 		bRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == false) { // server or client not running
 		return erSUCCESS ;
 	}
-	int32_t	iRV	= sRTCslow.sBufStdOut.IdxWR > sRTCslow.sBufStdOut.IdxRD ? sRTCslow.sBufStdOut.IdxWR - sRTCslow.sBufStdOut.IdxRD :	// single block
-				  sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD ? sRTCslow.sBufStdOut.Size - sRTCslow.sBufStdOut.IdxRD	:	// possibly 2 blocks
+	int32_t	iRV	= sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD :	// single block
+				  sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD	:	// possibly 2 blocks
 				  0 ;																			// nothing
 #if		(configBUILD_WITH_NEW_CODE  == 1)
 	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCslow.sBufStdOut), iRV) ;	// yes, write #1
+		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
-			(sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
-			(sRTCslow.sBufStdOut.IdxWR > 0)) {			// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCslow.sBufStdOut.pBuf, sRTCslow.sBufStdOut.IdxWR) ;	// write #2 of 2
+			(sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD) && 	// possibly #2 required AND
+			(sRTCvars.sRTCbuf.IdxWR > 0)) {			// something there for #2
+			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCvars.sRTCbuf.pBuf, sRTCvars.sRTCbuf.IdxWR) ;	// write #2 of 2
 			vTelnetUpdateStats() ;
 		}
 		xTelnetHandleSGA() ;							// if req, send GA
 	}
-	vUBufReset(&sRTCslow.sBufStdOut) ;					// reset pointers to reflect empty
+	vUBufReset(&sRTCvars.sRTCbuf) ;					// reset pointers to reflect empty
 #else
 	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCslow.sBufStdOut), iRV) ;	// yes, write #1
+		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
-			(sRTCslow.sBufStdOut.IdxWR < sRTCslow.sBufStdOut.IdxRD) && 	// possibly #2 required AND
-			(sRTCslow.sBufStdOut.IdxWR > 0)) {					// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCslow.sBufStdOut.pBuf, sRTCslow.sBufStdOut.IdxWR) ;	// write #2 of 2
+			(sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD) && 	// possibly #2 required AND
+			(sRTCvars.sRTCbuf.IdxWR > 0)) {					// something there for #2
+			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCvars.sRTCbuf.pBuf, sRTCvars.sRTCbuf.IdxWR) ;	// write #2 of 2
 			vTelnetUpdateStats() ;
 		}
 	}
 	xTelnetHandleSGA() ;								// if req, send GA
-	vUBufReset(&sRTCslow.sBufStdOut) ;					// reset pointers to reflect empty
+	vUBufReset(&sRTCvars.sRTCbuf) ;					// reset pointers to reflect empty
 #endif
 
 	if (iRV < erSUCCESS) {
@@ -460,10 +460,10 @@ void	vTaskTelnet(void *pvParameters) {
 
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...
-			xStdOutLock(portMAX_DELAY) ;
+			halRTC_BufLock(portMAX_DELAY) ;
 			vCommandInterpret(CHR_NUL, true) ;			// force checking of flags
 			xTelnetFlushBuf() ;
-			xStdOutUnLock() ;
+			halRTC_BufUnLock() ;
 			// Step 1: read a single character
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
@@ -484,10 +484,10 @@ void	vTaskTelnet(void *pvParameters) {
 				break ;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
-			xStdOutLock(portMAX_DELAY) ;
+			halRTC_BufLock(portMAX_DELAY) ;
 			vCommandInterpret(cChr, true) ;
 			xTelnetFlushBuf() ;
-			xStdOutUnLock() ;
+			halRTC_BufUnLock() ;
 			break ;
 
 		default:
