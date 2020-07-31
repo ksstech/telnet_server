@@ -31,14 +31,15 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0xC000
+#define	debugFLAG					0xC000
 
-#define	debugOPTIONS					(debugFLAG & 0x0001)
-#define	debugSTATE						(debugFLAG & 0x0002)
+#define	debugOPTIONS				(debugFLAG & 0x0001)
+#define	debugSTATE					(debugFLAG & 0x0002)
 
-#define	debugTRACK						(debugFLAG & 0x2000)
-#define	debugPARAM						(debugFLAG & 0x4000)
-#define	debugRESULT						(debugFLAG & 0x8000)
+#define	debugTIMING					(debugFLAG_GLOBAL & debugFLAG & 0x1000)
+#define	debugTRACK					(debugFLAG_GLOBAL & debugFLAG & 0x2000)
+#define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
+#define	debugRESULT					(debugFLAG_GLOBAL & debugFLAG & 0x8000)
 
 // ##################################### Private/Static variables ##################################
 
