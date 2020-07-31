@@ -140,21 +140,20 @@ int32_t	xTelnetHandleSGA(void) {
  *				0 (if socket closed) or other negative error code
  */
 int32_t	xTelnetFlushBuf(void) {
-	if ((xUBufAvail(&sRTCvars.sRTCbuf) == 0) ||		// no characters there; OR
+	if ((xUBufAvail(&sNVmem.sNVbuf) == 0) ||		// no characters there; OR
 		bRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == false) { // server or client not running
 		return erSUCCESS ;
 	}
-	int32_t	iRV	= sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD :	// single block
-				  sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD	:	// possibly 2 blocks
+	int32_t	iRV	= sNVmem.sNVbuf.IdxWR > sNVmem.sNVbuf.IdxRD ? sNVmem.sNVbuf.IdxWR - sNVmem.sNVbuf.IdxRD :	// single block
+				  sNVmem.sNVbuf.IdxWR < sNVmem.sNVbuf.IdxRD ? sNVmem.sNVbuf.Size - sNVmem.sNVbuf.IdxRD	:	// possibly 2 blocks
 				  0 ;																			// nothing
-#if		(configBUILD_WITH_NEW_CODE  == 1)
 	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
+		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sNVmem.sNVbuf), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
-			(sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD) && 	// possibly #2 required AND
-			(sRTCvars.sRTCbuf.IdxWR > 0)) {			// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCvars.sRTCbuf.pBuf, sRTCvars.sRTCbuf.IdxWR) ;	// write #2 of 2
+			(sNVmem.sNVbuf.IdxWR < sNVmem.sNVbuf.IdxRD) && 	// possibly #2 required AND
+			(sNVmem.sNVbuf.IdxWR > 0)) {				// something there for #2
+			iRV = xNetWrite(&sTerm.sCtx, (char *) sNVmem.sNVbuf.pBuf, sNVmem.sNVbuf.IdxWR) ;	// write #2 of 2
 			vTelnetUpdateStats() ;
 		}
 		xTelnetHandleSGA() ;							// if req, send GA
