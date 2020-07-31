@@ -159,21 +159,7 @@ int32_t	xTelnetFlushBuf(void) {
 		}
 		xTelnetHandleSGA() ;							// if req, send GA
 	}
-	vUBufReset(&sRTCvars.sRTCbuf) ;					// reset pointers to reflect empty
-#else
-	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
-		vTelnetUpdateStats() ;
-		if ((iRV > 0) && 								// if #1 write successful AND
-			(sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD) && 	// possibly #2 required AND
-			(sRTCvars.sRTCbuf.IdxWR > 0)) {					// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCvars.sRTCbuf.pBuf, sRTCvars.sRTCbuf.IdxWR) ;	// write #2 of 2
-			vTelnetUpdateStats() ;
-		}
-	}
-	xTelnetHandleSGA() ;								// if req, send GA
-	vUBufReset(&sRTCvars.sRTCbuf) ;					// reset pointers to reflect empty
-#endif
+	vUBufReset(&sNVmem.sNVbuf) ;						// reset pointers to reflect empty
 
 	if (iRV < erSUCCESS) {
 		TNetState = tnetSTATE_DEINIT ;
