@@ -12,10 +12,10 @@
 #include	"x_errors_events.h"
 #include	"syslog.h"
 #include	"printfx.h"
+#include	"x_stdio.h"
 #include	"x_terminal.h"
 
 #include	"hal_debug.h"
-#include	"hal_rtc.h"
 
 #include	<unistd.h>
 #include	<string.h>
@@ -447,10 +447,10 @@ void	vTaskTelnet(void *pvParameters) {
 
 		case tnetSTATE_RUNNING:
 			// Step 0: if anything there from an earlier background event, display it...
-			halRTC_BufLock(portMAX_DELAY) ;
+			xStdioBufLock(portMAX_DELAY) ;
 			vCommandInterpret(CHR_NUL, true) ;			// force checking of flags
 			xTelnetFlushBuf() ;
-			halRTC_BufUnLock() ;
+			xStdioBufUnLock() ;
 			// Step 1: read a single character
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
@@ -471,10 +471,10 @@ void	vTaskTelnet(void *pvParameters) {
 				break ;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
-			halRTC_BufLock(portMAX_DELAY) ;
+			xStdioBufLock(portMAX_DELAY) ;
 			vCommandInterpret(cChr, true) ;
 			xTelnetFlushBuf() ;
-			halRTC_BufUnLock() ;
+			xStdioBufUnLock() ;
 			break ;
 
 		default:
