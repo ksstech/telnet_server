@@ -426,6 +426,13 @@ void	vTaskTelnet(void *pvParameters) {
 
 		case tnetSTATE_AUTHEN:
 #if		(tnetAUTHENTICATE == 1) || (configPRODUCTION == 1)
+	#ifndef	configUSERNAME
+		#define	configUSERNAME					"TestUser"
+	#endif
+
+	#ifndef	configPASSWORD
+		#define	configPASSWORD					"TestPass"
+	#endif
 			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					iRV = errno ;
