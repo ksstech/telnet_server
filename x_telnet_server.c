@@ -43,7 +43,7 @@
 
 // ##################################### Private/Static variables ##################################
 
-const char * codename[4] = {"WILL", "WONT", "DO", "DONT"} ;
+const char * const codename[4] = {"WILL", "WONT", "DO", "DONT"} ;
 
 opts_t options = {
 	.val[0] = tnetOPT_ECHO, 	.name[0] = "Echo",
