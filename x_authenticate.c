@@ -5,9 +5,9 @@
 #include	"FreeRTOS_Support.h"
 
 #include	"x_authenticate.h"
-#include	"printfx.h"
 #include	"x_errors_events.h"
 #include	"x_sockets.h"
+#include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 
 #include	<stdio.h>
 #include	<string.h>

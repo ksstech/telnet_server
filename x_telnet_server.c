@@ -9,8 +9,8 @@
 #include	"commands.h"
 #include	"x_authenticate.h"
 #include	"x_errors_events.h"
+#include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include	"syslog.h"
-#include	"printfx.h"
 #include	"x_stdio.h"
 #include	"x_terminal.h"
 
