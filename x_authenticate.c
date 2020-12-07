@@ -6,7 +6,7 @@
 
 #include	"x_authenticate.h"
 #include	"x_errors_events.h"
-#include	"x_sockets.h"
+#include	"socketsX.h"
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 
 #include	<stdio.h>
