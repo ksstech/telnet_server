@@ -247,13 +247,12 @@ void	vTelnetUpdateOption(void) {
 int32_t	xTelnetParseChar(int32_t cChr) {
 	switch (TNetSubSt) {
 	case tnetSUBST_CHECK:
-#if		(configBUILD_WITH_NEW_CODE == 1)
 		if (cChr == tnetIAC)
 			TNetSubSt = tnetSUBST_IAC ;
 		else if (cChr != tnetGA)
 			return cChr ;								// RETURN the character
 		break ;
-#else
+#if 0
 		if (cChr == tnetIAC) 		{ TNetSubSt = tnetSUBST_IAC ;	}
 		else if (cChr == tnetGA)	{ return erSUCCESS ;			}
 		else						{ return cChr ;					}					// RETURN the character
@@ -496,10 +495,9 @@ void	vTaskTelnet(void *pvParameters) {
 void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, INT_MAX) ; }
 
 void	vTelnetReport(void) {
-	if (bRtosCheckStatus(flagNET_TNET_CLNT)) {
+	if (bRtosCheckStatus(flagNET_TNET_CLNT))
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
-	}
-	if (bRtosCheckStatus(flagNET_TNET_SERV)) {
+	if (bRtosCheckStatus(flagNET_TNET_SERV))
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
 	else
 		printfx("%CTNETxxx%C\t", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), attrRESET) ;
