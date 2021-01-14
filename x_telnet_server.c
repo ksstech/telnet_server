@@ -500,7 +500,7 @@ void	vTelnetReport(void) {
 	if (bRtosCheckStatus(flagNET_TNET_SERV))
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
 	else
-		printfx("%CTNETxxx%C\t", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), attrRESET) ;
+		printfx("%CTNETxxx%C\t", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), xpfSGR(attrRESET, 0, 0, 0)) ;
 #if		(debugOPTIONS)
 	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
 		printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
@@ -509,7 +509,7 @@ void	vTelnetReport(void) {
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)
 	terminfo_t	TermInfo ;
 	vTerminalGetInfo(&TermInfo) ;
-	printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+	printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), xpfSGR(attrRESET, 0, 0, 0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
 #endif
 	printfx("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 }
