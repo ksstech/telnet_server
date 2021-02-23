@@ -494,21 +494,22 @@ void	vTaskTelnet(void *pvParameters) {
 void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, INT_MAX) ; }
 
 void	vTelnetReport(void) {
-	if (bRtosCheckStatus(flagNET_TNET_CLNT))
-		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
-	if (bRtosCheckStatus(flagNET_TNET_SERV))
+	if (bRtosCheckStatus(flagNET_TNET_SERV)) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
-	else
+		printfx(" =>\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+	}
+	if (bRtosCheckStatus(flagNET_TNET_CLNT)) {
+		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
+	#if	(debugOPTIONS)
 		printfx("%CTNETxxx%C\t", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), xpfSGR(attrRESET, 0, 0, 0)) ;
-#if		(debugOPTIONS)
-	for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
-		printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
-	printfx("\n") ;
-#endif
-#if		(buildTERMINAL_CONTROLS_CURSOR == 1)
-	terminfo_t	TermInfo ;
-	vTerminalGetInfo(&TermInfo) ;
-	printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), xpfSGR(attrRESET, 0, 0, 0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
-#endif
-	printfx("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+		for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
+			printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+		printfx("\n") ;
+	#endif
+	#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
+		terminfo_t	TermInfo ;
+		vTerminalGetInfo(&TermInfo) ;
+		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(attrRESET, colourFG_CYAN, 0, 0), xpfSGR(attrRESET, 0, 0, 0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+	#endif
+	}
 }
