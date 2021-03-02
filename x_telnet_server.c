@@ -14,7 +14,7 @@
 #include	"x_stdio.h"
 #include	"x_terminal.h"
 
-#include	"hal_nvs.h"
+#include	"hal_variables.h"
 
 #include	<unistd.h>
 #include	<string.h>
