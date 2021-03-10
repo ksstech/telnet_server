@@ -68,11 +68,11 @@ static uint8_t		TNetSubSt ;
 
 void	vTelnetDeInit(int32_t eCode) {
 	xNetClose(&sTerm.sCtx) ;
-	xRtosClearStatus(flagNET_TNET_CLNT) ;
+	xRtosClearStatus(flagTNET_CLNT) ;
 	sTerm.Running = 0 ;
 
 	xNetClose(&sServTNetCtx) ;
-	xRtosClearStatus(flagNET_TNET_SERV) ;
+	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
 	IF_CTRACK(debugTRACK, "deinit: err=%d '%s'",  eCode, strerror(eCode)) ;
 }
@@ -140,7 +140,7 @@ int32_t	xTelnetHandleSGA(void) {
  */
 int32_t	xTelnetFlushBuf(void) {
 	if ((xUBufAvail(&sRTCvars.sRTCbuf) == 0) ||		// no characters there; OR
-		bRtosCheckStatus(flagNET_TNET_SERV | flagNET_TNET_CLNT) == false) { // server or client not running
+		bRtosCheckStatus(flagTNET_SERV | flagTNET_CLNT) == 0) { // server or client not running
 		return erSUCCESS ;
 	}
 	int32_t	iRV	= sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD :	// single block
@@ -360,7 +360,7 @@ void	vTaskTelnet(void *pvParameters) {
 				vTaskDelay(pdMS_TO_TICKS(tnetMS_OPEN)) ;
 				break ;
 			}
-			xRtosSetStatus(flagNET_TNET_SERV) ;
+			xRtosSetStatus(flagTNET_SERV) ;
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
 			IF_CTRACK(debugTRACK, "Init OK, waiting") ;
@@ -377,7 +377,7 @@ void	vTaskTelnet(void *pvParameters) {
 				}
 				break ;
 			}
-			xRtosSetStatus(flagNET_TNET_CLNT) ;
+			xRtosSetStatus(flagTNET_CLNT) ;
 
 			// setup timeout for processing options
 			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_OPTIONS) ;
@@ -494,11 +494,11 @@ void	vTaskTelnet(void *pvParameters) {
 void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, INT_MAX) ; }
 
 void	vTelnetReport(void) {
-	if (bRtosCheckStatus(flagNET_TNET_SERV)) {
+	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
 		printfx("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 	}
-	if (bRtosCheckStatus(flagNET_TNET_CLNT)) {
+	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 	#if	(debugOPTIONS)
 		printfx("%CTNETxxx%C\t", xpfSGR(colourFG_CYAN, 0, 0, 0), xpfSGR(attrRESET, 0, 0, 0)) ;
