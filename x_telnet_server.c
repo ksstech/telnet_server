@@ -30,7 +30,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG					0xF003
+#define	debugFLAG					0xF000
 
 #define	debugOPTIONS				(debugFLAG & 0x0001)
 #define	debugSTATE					(debugFLAG & 0x0002)
@@ -74,7 +74,7 @@ void	vTelnetDeInit(int32_t eCode) {
 	xNetClose(&sServTNetCtx) ;
 	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
-	IF_CTRACK(debugTRACK, "deinit: err=%d '%s'",  eCode, strerror(eCode)) ;
+	IF_CTRACK(debugSTATE, "deinit: err=%d '%s'",  eCode, strerror(eCode)) ;
 }
 
 const char * xTelnetFindName(uint8_t opt) {
@@ -339,7 +339,7 @@ void	vTaskTelnet(void *pvParameters) {
 			break ;					// must NOT fall through since the Lx status might have changed
 
 		case tnetSTATE_INIT:
-			IF_CTRACK(debugTRACK, "Init Start") ;
+			IF_CTRACK(debugSTATE, "Init Start") ;
 			memset(&sServTNetCtx, 0 , sizeof(sServTNetCtx)) ;
 			sServTNetCtx.sa_in.sin_family	= AF_INET ;
 			sServTNetCtx.type				= SOCK_STREAM ;
@@ -356,14 +356,14 @@ void	vTaskTelnet(void *pvParameters) {
 			iRV = xNetOpen(&sServTNetCtx) ;			// default blocking state
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
-				IF_CTRACK(debugTRACK, "OPEN fail") ;
+				IF_CTRACK(debugSTATE, "OPEN fail") ;
 				vTaskDelay(pdMS_TO_TICKS(tnetMS_OPEN)) ;
 				break ;
 			}
 			xRtosSetStatus(flagTNET_SERV) ;
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
-			IF_CTRACK(debugTRACK, "Init OK, waiting") ;
+			IF_CTRACK(debugSTATE, "Init OK, waiting") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
@@ -373,7 +373,7 @@ void	vTaskTelnet(void *pvParameters) {
 					(sServTNetCtx.error != ECONNABORTED)) {
 					iRV = sServTNetCtx.error ;
 					TNetState = tnetSTATE_DEINIT ;
-					IF_CTRACK(debugTRACK, "ACCEPT failed") ;
+					IF_CTRACK(debugSTATE, "ACCEPT failed") ;
 				}
 				break ;
 			}
@@ -383,14 +383,14 @@ void	vTaskTelnet(void *pvParameters) {
 			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_OPTIONS) ;
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
-				IF_CTRACK(debugTRACK, "Receive tOut failed") ;
+				IF_CTRACK(debugSTATE, "Receive tOut failed") ;
 				break ;
 			}
 			TNetState = tnetSTATE_OPTIONS ;			// and start processing options
 			TNetSubSt = tnetSUBST_CHECK ;
-			IF_CTRACK(debugTRACK, "Accept OK") ;
+			IF_CTRACK(debugSTATE, "Accept OK") ;
 			xTelnetSetBaseline() ;
-			IF_CTRACK(debugTRACK, "Baseline sent") ;
+			IF_CTRACK(debugSTATE, "Baseline sent") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
@@ -419,7 +419,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			TNetState = tnetSTATE_AUTHEN ;				// no char, start authenticate
 			TNetSubSt = tnetSUBST_CHECK ;
-			IF_CTRACK(debugTRACK, "Options OK") ;
+			IF_CTRACK(debugSTATE, "Options OK") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
@@ -438,7 +438,7 @@ void	vTaskTelnet(void *pvParameters) {
 				}
 				break ;
 			}
-			IF_CTRACK(debugTRACK, "Authentication OK") ;
+			IF_CTRACK(debugSTATE, "Authentication OK") ;
 #endif
 			// All options and authentication done, empty the buffer to the client
 			if (xTelnetFlushBuf() != erSUCCESS) {
@@ -476,7 +476,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdioBufLock(portMAX_DELAY) ;
-			vCommandInterpret(cChr, true) ;
+			vCommandInterpret(cChr, 1) ;
 			xTelnetFlushBuf() ;
 			xStdioBufUnLock() ;
 			break ;
