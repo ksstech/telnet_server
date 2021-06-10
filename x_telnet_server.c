@@ -324,6 +324,7 @@ int32_t	xTelnetSetBaseline(void) {
  */
 void	vTaskTelnet(void *pvParameters) {
 	IF_CTRACK(debugAPPL_THREADS, debugAPPL_MESS_UP) ;
+	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTELNET) ;
 	int32_t	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
