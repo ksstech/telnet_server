@@ -139,14 +139,17 @@ int32_t	xTelnetHandleSGA(void) {
  *				0 (if socket closed) or other negative error code
  */
 int32_t	xTelnetFlushBuf(void) {
-	if ((xUBufAvail(&sRTCvars.sRTCbuf) == 0) ||		// no characters there; OR
+	if ((xStdioBufAvail() == 0) ||						// no characters there; OR
 		bRtosCheckStatus(flagTNET_SERV | flagTNET_CLNT) == 0) { // server or client not running
 		return erSUCCESS ;
 	}
-	int32_t	iRV	= sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD :	// single block
-				  sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD ? sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD	:	// possibly 2 blocks
-				  0 ;																			// nothing
+	int32_t	iRV	= (sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD)
+				? (sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD)
+				: (sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD)
+				? (sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD)
+				: 0 ;
 	if (iRV) {											// anything to write ?
+		vUBufReport(&sRTCvars.sRTCbuf) ;
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
