@@ -67,25 +67,6 @@ enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB
 
 // ########################################## structures ###########################################
 
-typedef struct opts_s {									// used to decode known/supported options
-	uint8_t		val[10] ;
-	const char *name[10] ;
-} opts_t ;
-
-typedef	struct tnet_state {
-	netx_t	sCtx ;
-	uint8_t		optdata[35] ;
-	uint8_t		optlen ;
-	uint8_t		code ;
-	uint8_t		options[(tnetOPT_MAX_VAL+3)/4] ;
-	union {												// internal flags
-		struct {
-			uint8_t	TxNow	: 1 ;
-			uint8_t	Running	: 1 ;
-		} ;
-		uint8_t		flag ;
-	} ;
-} tnet_con_t ;
 
 // ######################################## global variables #######################################
 
