@@ -2,23 +2,20 @@
  * x_telnet_server.c - Telnet protocol support
  */
 
-#include	"FreeRTOS_Support.h"
 #include	"x_telnet_server.h"
-#include	"task_control.h"
+#include	"x_authenticate.h"
 
 #include	"commands.h"
-#include	"x_authenticate.h"
-#include	"x_errors_events.h"
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include	"syslog.h"
 #include	"x_stdio.h"
 #include	"x_terminal.h"
-
-#include	"hal_variables.h"
+#include	"x_errors_events.h"
 
 #include	<unistd.h>
 #include	<string.h>
-#include	<sys/errno.h>
+
+#include	<errno.h>
 
 /* Documentation links
  * Obsolete:
@@ -80,9 +77,7 @@ void	vTelnetDeInit(int32_t eCode) {
 const char * xTelnetFindName(uint8_t opt) {
 	uint8_t idx ;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
-		if (options.val[idx] == opt) {
-			break ;
-		}
+		if (options.val[idx] == opt) break;
 	}
 	return options.name[idx] ;
 }
@@ -111,17 +106,13 @@ uint8_t	xTelnetGetOption(uint8_t opt) {
 	return (sTerm.options[opt/4] >> ((opt % 4) * 2)) & 0x03  ;
 }
 
-void	vTelnetUpdateStats(void) {
-	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) {
-		sServTNetCtx.maxTx = sTerm.sCtx.maxTx ;
-	}
-	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx) {
-		sServTNetCtx.maxRx = sTerm.sCtx.maxRx ;
-	}
+void vTelnetUpdateStats(void) {
+	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) sServTNetCtx.maxTx = sTerm.sCtx.maxTx ;
+	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx) sServTNetCtx.maxRx = sTerm.sCtx.maxRx ;
 }
 
-int32_t	xTelnetHandleSGA(void) {
-	int32_t iRV = xTelnetGetOption(tnetOPT_SGA) ;
+int	xTelnetHandleSGA(void) {
+	int iRV = xTelnetGetOption(tnetOPT_SGA) ;
 	if (iRV == valDONT || iRV == valWONT) {
 		char cGA = tnetGA ;
 		iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
@@ -138,12 +129,12 @@ int32_t	xTelnetHandleSGA(void) {
  * @return		non-zero positive value if nothing to send or all successfully sent
  *				0 (if socket closed) or other negative error code
  */
-int32_t	xTelnetFlushBuf(void) {
+int	xTelnetFlushBuf(void) {
 	if ((xStdioBufAvail() == 0) ||						// no characters there; OR
 		bRtosCheckStatus(flagTNET_SERV | flagTNET_CLNT) == 0) { // server or client not running
 		return erSUCCESS ;
 	}
-	int32_t	iRV	= (sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD)
+	int	iRV	= (sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD)
 				? (sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD)
 				: (sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD)
 				? (sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD)
@@ -162,9 +153,7 @@ int32_t	xTelnetFlushBuf(void) {
 	}
 	vUBufReset(&sRTCvars.sRTCbuf) ;						// reset pointers to reflect empty
 
-	if (iRV < erSUCCESS) {
-		TNetState = tnetSTATE_DEINIT ;
-	}
+	if (iRV < erSUCCESS) TNetState = tnetSTATE_DEINIT;
 	return iRV < erSUCCESS ? iRV : erSUCCESS ;
 }
 
@@ -174,9 +163,9 @@ int32_t	xTelnetFlushBuf(void) {
  * @param o2	Value
  * @return		erSUCCESS or (-) error code or (+) number of bytes (very unlikely)
  */
-void	vTelnetSendOption(uint8_t opt, uint8_t cmd) {
+void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
 	char cBuf[3] = { tnetIAC, cmd, opt } ;
-	int32_t iRV = xNetWrite(&sTerm.sCtx, cBuf, sizeof(cBuf)) ;
+	int iRV = xNetWrite(&sTerm.sCtx, cBuf, sizeof(cBuf)) ;
 	if (iRV == sizeof(cBuf)) {
 		xTelnetSetOption(opt, cmd) ;
 		vTelnetUpdateStats() ;
@@ -227,7 +216,7 @@ void	vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
 	}
 }
 
-void	vTelnetUpdateOption(void) {
+void vTelnetUpdateOption(void) {
 	switch (sTerm.code) {
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
@@ -246,7 +235,7 @@ void	vTelnetUpdateOption(void) {
 	}
 }
 
-int32_t	xTelnetParseChar(int32_t cChr) {
+int	xTelnetParseChar(int cChr) {
 	switch (TNetSubSt) {
 	case tnetSUBST_CHECK:
 		if (cChr == tnetIAC)
@@ -295,12 +284,12 @@ int32_t	xTelnetParseChar(int32_t cChr) {
 	return erSUCCESS ;
 }
 
-int32_t	xTelnetSetBaseline(void) {
+int	xTelnetSetBaseline(void) {
 	/*					Putty			MikroTik
 	 *	WONT	DONT	no echo			local echo
 	 *	WILL	DONT	no echo			no echo
 	 */
-	int32_t iRV = xTelnetGetOption(tnetOPT_ECHO) ;
+	int iRV = xTelnetGetOption(tnetOPT_ECHO) ;
 	if (iRV == valWILL || iRV == valDONT) {
 		vTelnetSendOption(tnetOPT_ECHO, tnetDONT) ;
 		vTelnetSendOption(tnetOPT_ECHO, tnetWILL) ;
@@ -328,19 +317,15 @@ int32_t	xTelnetSetBaseline(void) {
 void	vTaskTelnet(void *pvParameters) {
 	IF_TRACK(debugAPPL_THREADS, debugAPPL_MESS_UP) ;
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTELNET) ;
-	int32_t	iRV = 0 ;
+	int	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
 	xRtosSetStateRUN(taskTELNET) ;
 
 	while (bRtosVerifyState(taskTELNET)) {
-		if (TNetState != tnetSTATE_DEINIT) {
-			xRtosWaitStatusANY(flagL3_ANY, portMAX_DELAY) ;
-		}
+		if (TNetState != tnetSTATE_DEINIT) xRtosWaitStatusANY(flagL3_ANY, portMAX_DELAY);
 		switch(TNetState) {
-		case tnetSTATE_DEINIT:
-			vTelnetDeInit(iRV) ;
-			break ;					// must NOT fall through since the Lx status might have changed
+		case tnetSTATE_DEINIT: vTelnetDeInit(iRV); break;
 
 		case tnetSTATE_INIT:
 			IF_CTRACK(debugSTATE, "Init Start\n") ;
@@ -406,13 +391,9 @@ void	vTaskTelnet(void *pvParameters) {
 					break ;
 				}
 				/* EAGAIN so unless completed OPTIONS phase (tnetSUBST_CHECK) try again */
-				if (TNetSubSt != tnetSUBST_CHECK) {
-					break ;
-				}
+				if (TNetSubSt != tnetSUBST_CHECK) break;
 			} else {
-				if (xTelnetParseChar(cChr) == erSUCCESS) {
-					break ;
-				}
+				if (xTelnetParseChar(cChr) == erSUCCESS) break;
 				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
 				IF_myASSERT(debugSTATE && TNetSubSt != tnetSUBST_CHECK, 0) ;
 			}
@@ -505,15 +486,16 @@ void	vTelnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 	#if	(debugOPTIONS)
-		printfx("%CTNETxxx%C\t", xpfSGR(colourFG_CYAN, 0, 0, 0), xpfSGR(attrRESET, 0, 0, 0)) ;
-		for (int32_t idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
+		printfx("%CTNETxxx%C\t", xpfSGR(colourFG_CYAN, 0, 0, 0), xpfSGR(attrRESET,0,0,0)) ;
+		for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
 			printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 		printfx("\n") ;
 	#endif
 	#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
 		terminfo_t	TermInfo ;
 		vTerminalGetInfo(&TermInfo) ;
-		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(colourFG_CYAN, 0, 0, 0), xpfSGR(attrRESET, 0, 0, 0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY) ;
+		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(colourFG_CYAN,0,0,0),
+			xpfSGR(attrRESET,0,0,0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
 	#endif
 	}
 }

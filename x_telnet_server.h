@@ -4,10 +4,11 @@
 
 #pragma once
 
+#include	"hal_variables.h"
+#include	"FreeRTOS_Support.h"
+
 #include	"socketsX.h"
 #include	"x_ubuf.h"
-
-#include	<stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,7 +92,7 @@ typedef	struct tnet_state {
 
 // ################################### GLOBAL Function Prototypes ##################################
 
-void	vTaskTelnet(void * pvParameters) ;
+void	vTaskTelnet(void *) ;
 void	vTaskTelnetInit(void) ;
 void	vTelnetReport(void) ;
 

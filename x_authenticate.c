@@ -14,7 +14,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG						0xC000
+#define	debugFLAG					0xC000
 
 #define	debugTIMING					(debugFLAG_GLOBAL & debugFLAG & 0x1000)
 #define	debugTRACK					(debugFLAG_GLOBAL & debugFLAG & 0x2000)
@@ -25,13 +25,13 @@
 
 char cBS[3] = { CHR_BS, CHR_SPACE, CHR_BS } ;
 
-int32_t	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
+int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 	uint8_t	Idx = 0, cChr ;
 	while (1) {
-		int32_t iRV = read(sd, &cChr, sizeof(cChr)) ;
-		if (iRV == sizeof(uint8_t)) {
-			if (cChr == CHR_CR) {						// end of input
-				pcBuf[Idx] = CHR_NUL ;
+		int iRV = read(sd, &cChr, sizeof(cChr)) ;
+		if (iRV == 1) {
+			if (cChr == '\r') {							// end of input
+				pcBuf[Idx] = 0 ;
 				break ;
 			} else if (cChr == CHR_BS) {				// correct typo
 				if (Idx > 0) {							// if anything in buffer
@@ -40,15 +40,15 @@ int32_t	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 					cChr = CHR_BEL ;					// else buffer empty, ring the bell..
 				}
 			} else if (Idx < (Size-1)) {				// space left in buffer ?
-				if (INRANGE(CHR_SPACE, cChr, CHR_TILDE, int32_t)) {	// & valid char ?
+				if (INRANGE(' ', cChr, '~', char)) {	// & valid char ?
 					pcBuf[Idx++] = cChr ;				// store in buffer
 				} else {
-					cChr = CHR_NUL ;
+					cChr = 0 ;
 				}
 			} else {									// buffer is full
 				break ;									// go test what you have...
 			}
-			if (bEcho && (cChr != CHR_NUL)) {
+			if (bEcho && (cChr != 0)) {
 				if (cChr == CHR_BS) {
 					write(sd, cBS, sizeof(cBS)) ;
 				} else {
@@ -60,30 +60,21 @@ int32_t	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 		}
 		vTaskDelay(50) ;
 	}
-	if (cChr == CHR_CR) {
-		write(sd, "\r\n", 2) ;
-	}
+	if (cChr == '\r') write(sd, "\r\n", 2) ;
 	return Idx ;
 }
 
-int32_t	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
-	char Buf[35] ;
-	if (pcPrompt) {
-		dprintfx(sd, pcPrompt) ;
-	}
-	int32_t iRV = xReadString(sd, Buf, sizeof(Buf), bEcho) ;
-	if (iRV <= 0) {
-		return erFAILURE ;
-	}
-	if (strcmp((char *) Buf, pcKey) != 0) {
-		return erFAILURE ;
-	}
-	return erSUCCESS ;
+int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
+	char Buf[35];
+	if (pcPrompt) dprintfx(sd, pcPrompt);
+	int iRV = xReadString(sd, Buf, sizeof(Buf), bEcho);
+	if (iRV <= 0) return erFAILURE;
+	if (strcmp((char *) Buf, pcKey) != 0) return erFAILURE;
+	return erSUCCESS;
 }
 
-int32_t	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) {
-	if (xAutheticateObject(sd, "User: ", pcUsername, 1) == erSUCCESS) {
+int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) {
+	if (xAutheticateObject(sd, "User: ", pcUsername, 1) == erSUCCESS)
 		return xAutheticateObject(sd, "Pswd: ", pcPassword, bEcho) ;
-	}
 	return erFAILURE ;
 }

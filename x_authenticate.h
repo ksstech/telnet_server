@@ -15,4 +15,4 @@
 
 // ################################### Public/global functions #####################################
 
-int32_t	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) ;
+int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) ;
