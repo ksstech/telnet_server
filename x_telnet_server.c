@@ -44,7 +44,7 @@ typedef struct opts_t {									// used to decode known/supported options
 	const char *name[10] ;
 } opts_t ;
 
-typedef	struct __attribute__((packed)) tnet_con_t {
+typedef	struct tnet_con_t {
 	netx_t	sCtx ;
 	uint8_t	optdata[35] ;
 	uint8_t	optlen ;
