@@ -374,7 +374,7 @@ void	vTaskTelnet(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
-			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetMS_ACCEPT) ;
+			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_ACCEPT));
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) &&
 					(sServTNetCtx.error != ECONNABORTED)) {
@@ -387,7 +387,7 @@ void	vTaskTelnet(void *pvParameters) {
 			xRtosSetStatus(flagTNET_CLNT) ;
 
 			// setup timeout for processing options
-			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_OPTIONS) ;
+			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, pdMS_TO_TICKS(tnetMS_OPTIONS));
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Receive tOut failed\n") ;
