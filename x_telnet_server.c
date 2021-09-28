@@ -453,11 +453,6 @@ void	vTaskTelnet(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_RUNNING:
-			// Step 0: if anything there from an earlier background event, display it...
-			xStdioBufLock(portMAX_DELAY) ;
-			vCommandInterpret(CHR_NUL, 1) ;				// force checking of flags
-			xTelnetFlushBuf() ;
-			xStdioBufUnLock() ;
 			// Step 1: read a single character
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
@@ -477,10 +472,12 @@ void	vTaskTelnet(void *pvParameters) {
 				break ;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
-			xStdioBufLock(portMAX_DELAY) ;
-			vCommandInterpret(cChr, 1) ;
-			xTelnetFlushBuf() ;
-			xStdioBufUnLock() ;
+			xStdioBufLock(portMAX_DELAY);
+			SystemFlag |= sysFLAG_RTCBUF_USE;
+			vCommandInterpret(cChr, 1);
+			xTelnetFlushBuf();
+			SystemFlag &= ~sysFLAG_RTCBUF_USE;
+			xStdioBufUnLock();
 			break ;
 
 		default: IF_myASSERT(debugTRACK, 0) ;
