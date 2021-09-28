@@ -158,7 +158,6 @@ int	xTelnetFlushBuf(void) {
 			? (sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD)
 			: 0 ;
 	if (iRV) {											// anything to write ?
-		vUBufReport(&sRTCvars.sRTCbuf) ;
 		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
 		vTelnetUpdateStats() ;
 		if ((iRV > 0) && 								// if #1 write successful AND
