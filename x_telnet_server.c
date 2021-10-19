@@ -34,6 +34,9 @@
 #define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
 #define	debugRESULT					(debugFLAG_GLOBAL & debugFLAG & 0x8000)
 
+#define	tnetMS_SOCKET						500
+#define	tnetMS_READ_WRITE					70
+
 // ########################################## structures ###########################################
 
 typedef struct opts_t {									// used to decode known/supported options
@@ -325,10 +328,6 @@ int	xTelnetSetBaseline(void) {
 
 // ################### global functions, normally running in other task context ####################
 
-/**
- * vTelnetTask()
- * @param pvParameters
- */
 void	vTaskTelnet(void *pvParameters) {
 	IF_PRINT(debugTRACK && ioB1GET(ioStart), debugAPPL_MESS_UP) ;
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTELNET_MASK) ;
@@ -338,7 +337,11 @@ void	vTaskTelnet(void *pvParameters) {
 	xRtosSetStateRUN(taskTELNET_MASK) ;
 
 	while (bRtosVerifyState(taskTELNET_MASK)) {
-		if (TNetState != tnetSTATE_DEINIT) xRtosWaitStatusANY(flagL3_ANY, portMAX_DELAY);
+		if (TNetState != tnetSTATE_DEINIT) {
+			EventBits_t CurStat = xRtosWaitStatusANY(flagL3_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
+			if ((CurStat & (flagL3_STA|flagL3_SAP)) == 0)
+				continue;
+		}
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
 			vTelnetDeInit(iRV);		// must NOT fall through, IP Lx might have changed
@@ -363,20 +366,19 @@ void	vTaskTelnet(void *pvParameters) {
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "OPEN fail\n") ;
-				vTaskDelay(pdMS_TO_TICKS(tnetMS_OPEN)) ;
+				vTaskDelay(pdMS_TO_TICKS(tnetMS_SOCKET)) ;
 				break ;
 			}
 			xRtosSetStatus(flagTNET_SERV) ;
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Init OK, waiting") ;
+			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Init OK, waiting\n") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
-			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_ACCEPT));
+			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_SOCKET));
 			if (iRV < erSUCCESS) {
-				if ((sServTNetCtx.error != EAGAIN) &&
-					(sServTNetCtx.error != ECONNABORTED)) {
+				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					iRV = sServTNetCtx.error ;
 					TNetState = tnetSTATE_DEINIT ;
 					IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "ACCEPT failed\n") ;
@@ -386,7 +388,7 @@ void	vTaskTelnet(void *pvParameters) {
 			xRtosSetStatus(flagTNET_CLNT) ;
 
 			// setup timeout for processing options
-			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, pdMS_TO_TICKS(tnetMS_OPTIONS));
+			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_SOCKET);
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Receive tOut failed\n") ;
@@ -474,6 +476,7 @@ void	vTaskTelnet(void *pvParameters) {
 			xStdioBufLock(portMAX_DELAY);
 			SystemFlag |= sysFLAG_RTCBUF_USE;
 			vCommandInterpret(cChr, 1);
+			halVARS_CheckChanges();
 			xTelnetFlushBuf();
 			SystemFlag &= ~sysFLAG_RTCBUF_USE;
 			xStdioBufUnLock();
