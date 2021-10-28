@@ -244,9 +244,9 @@ void vTelnetUpdateOption(void) {
 		if (sTerm.optlen == 4) {
 #if		(buildTERMINAL_CONTROLS_CURSOR == 1)		// NOT TESTED, check against RFC
 			vTerminalSetSize(ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
-			IF_TRACK(debugTRACK && ioB1GET(ioTNET), "Applied NAWS C=%d R=%d\n", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+			SL_INFO("Applied NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2)));
 #else
-			SL_INFO("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
+			SL_NOT("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2)));
 #endif
 		} else {
 			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen ) ;
