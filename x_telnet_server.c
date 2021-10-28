@@ -504,7 +504,7 @@ void	vTelnetReport(void) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 	#if	(debugTRACK)
 		if (ioB1GET(ioTNET)) {
-			printfx("%CTNETxxx%C\t", xpfSGR(colourFG_CYAN, 0, 0, 0), xpfSGR(attrRESET,0,0,0)) ;
+			printfx("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
 			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
 				printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 			printfx("\n") ;
@@ -513,8 +513,8 @@ void	vTelnetReport(void) {
 	#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
 		terminfo_t	TermInfo ;
 		vTerminalGetInfo(&TermInfo) ;
-		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", xpfSGR(colourFG_CYAN,0,0,0),
-			xpfSGR(attrRESET,0,0,0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
+		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", colourFG_CYAN,
+			attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
 	#endif
 	}
 }
