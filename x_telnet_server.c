@@ -248,9 +248,8 @@ void vTelnetUpdateOption(void) {
 #else
 			SL_NOT("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2)));
 #endif
-		} else {
-			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen ) ;
-		}
+		} else
+			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen );
 		break ;
 	default:
 		SL_ERR("Unsupported OPTION %d data (%d bytes)", sTerm.code, sTerm.optlen) ;
@@ -341,7 +340,7 @@ void	vTaskTelnet(void *pvParameters) {
 	while (bRtosVerifyState(taskTELNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
 			EventBits_t CurStat = xRtosWaitStatusANY(flagL3_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
-			if ((CurStat & (flagL3_STA|flagL3_SAP)) == 0)
+			if ((CurStat & (flagL3_ANY)) == 0)
 				continue;
 		}
 		switch(TNetState) {
