@@ -86,12 +86,14 @@ static uint8_t		TNetSubSt ;
 
 // ####################################### private functions #######################################
 
-void vTelnetDeInit(int32_t eCode) {
-	xNetClose(&sTerm.sCtx) ;
+void vTelnetDeInit(int eCode) {
+	if (sTerm.sCtx.sd > 0)
+		xNetClose(&sTerm.sCtx);
 	xRtosClearStatus(flagTNET_CLNT) ;
 	sTerm.Running = 0 ;
 
-	xNetClose(&sServTNetCtx) ;
+	if (sServTNetCtx.sd > 0)
+		xNetClose(&sServTNetCtx) ;
 	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
 	IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "deinit: err=%d '%s'\n",  eCode, strerror(eCode)) ;
