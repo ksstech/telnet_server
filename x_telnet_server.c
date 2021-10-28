@@ -96,7 +96,7 @@ void vTelnetDeInit(int eCode) {
 		xNetClose(&sServTNetCtx) ;
 	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
-	IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "deinit: err=%d '%s'\n",  eCode, strerror(eCode)) ;
+	IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "deinit: err=%d '%s'\n",  eCode, esp_err_to_name(eCode)) ;
 }
 
 const char * xTelnetFindName(uint8_t opt) {
