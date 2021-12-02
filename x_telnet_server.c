@@ -2,20 +2,18 @@
  * x_telnet_server.c - Telnet protocol support
  */
 
+#include	<unistd.h>
+#include	<string.h>
+#include	<errno.h>
 
 #include	"x_telnet_server.h"
 #include	"x_authenticate.h"
 #include	"commands.h"
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include	"syslog.h"
-#include	"x_stdio.h"
+#include	"hal_usart.h"
 #include	"x_terminal.h"
 #include	"x_errors_events.h"
-
-#include	<unistd.h>
-#include	<string.h>
-
-#include	<errno.h>
 
 /* Documentation links
  * Obsolete:
@@ -87,13 +85,15 @@ static uint8_t		TNetSubSt ;
 // ####################################### private functions #######################################
 
 void vTelnetDeInit(int eCode) {
-	if (sTerm.sCtx.sd > 0)
+	if (sTerm.sCtx.sd > 0) {
 		xNetClose(&sTerm.sCtx);
+	}
 	xRtosClearStatus(flagTNET_CLNT) ;
 	sTerm.Running = 0 ;
 
-	if (sServTNetCtx.sd > 0)
-		xNetClose(&sServTNetCtx) ;
+	if (sServTNetCtx.sd > 0) {
+		xNetClose(&sServTNetCtx);
+	}
 	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
 	IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "deinit: err=%d '%s'\n",  eCode, esp_err_to_name(eCode)) ;
@@ -102,7 +102,9 @@ void vTelnetDeInit(int eCode) {
 const char * xTelnetFindName(uint8_t opt) {
 	uint8_t idx ;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
-		if (options.val[idx] == opt) break;
+		if (options.val[idx] == opt) {
+			break;
+		}
 	}
 	return options.name[idx] ;
 }
@@ -132,8 +134,10 @@ uint8_t	xTelnetGetOption(uint8_t opt) {
 }
 
 void vTelnetUpdateStats(void) {
-	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) sServTNetCtx.maxTx = sTerm.sCtx.maxTx ;
-	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx) sServTNetCtx.maxRx = sTerm.sCtx.maxRx ;
+	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx)
+		sServTNetCtx.maxTx = sTerm.sCtx.maxTx ;
+	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx)
+		sServTNetCtx.maxRx = sTerm.sCtx.maxRx ;
 }
 
 int	xTelnetHandleSGA(void) {
@@ -149,6 +153,15 @@ int	xTelnetHandleSGA(void) {
 	return erSUCCESS ;
 }
 
+int xTelnetWriteBlock(int Size) {
+	int iRV = xNetWrite(&sTerm.sCtx, pcStdioBufTellRead(), Size);
+	if (iRV != Size)
+		SL_ERR("Incomplete write %d != %d", Size, iRV);
+	vUBufStepRead(&sRTCvars.sRTCbuf, iRV);
+	vTelnetUpdateStats();
+	return iRV;
+}
+
 /**
  * xTelnetFlushBuf() -- send any/all buffered data immediately after connection established
  * @return		non-zero positive value if nothing to send or all successfully sent
@@ -157,25 +170,17 @@ int	xTelnetHandleSGA(void) {
 int	xTelnetFlushBuf(void) {
 	if (!xStdioBufAvail() || !bRtosCheckStatus(flagTNET_SERV|flagTNET_CLNT))
 		return erSUCCESS;
-	int	iRV	= (sRTCvars.sRTCbuf.IdxWR > sRTCvars.sRTCbuf.IdxRD)
-			? (sRTCvars.sRTCbuf.IdxWR - sRTCvars.sRTCbuf.IdxRD)
-			: (sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD)
-			? (sRTCvars.sRTCbuf.Size - sRTCvars.sRTCbuf.IdxRD)
-			: 0 ;
-	if (iRV) {											// anything to write ?
-		iRV = xNetWrite(&sTerm.sCtx, pcUBufTellRead(&sRTCvars.sRTCbuf), iRV) ;	// yes, write #1
-		vTelnetUpdateStats() ;
-		if ((iRV > 0) && 								// if #1 write successful AND
-			(sRTCvars.sRTCbuf.IdxWR < sRTCvars.sRTCbuf.IdxRD) && 	// possibly #2 required AND
-			(sRTCvars.sRTCbuf.IdxWR > 0)) {				// something there for #2
-			iRV = xNetWrite(&sTerm.sCtx, (char *) sRTCvars.sRTCbuf.pBuf, sRTCvars.sRTCbuf.IdxWR) ;	// write #2 of 2
-			vTelnetUpdateStats() ;
-		}
-		xTelnetHandleSGA() ;							// if req, send GA
+	int	iRV	= xStdioBufBlock();
+	if (iRV) {
+		xTelnetWriteBlock(iRV);
+		iRV	= xStdioBufBlock();
+		if (iRV)
+			xTelnetWriteBlock(iRV);
+		xTelnetHandleSGA();
 	}
-	vUBufReset(&sRTCvars.sRTCbuf) ;						// reset pointers to reflect empty
-
-	if (iRV < erSUCCESS) TNetState = tnetSTATE_DEINIT;
+	IF_myASSERT(debugTRACK, xStdioBufBlock() == 0);
+	if (iRV < erSUCCESS)
+		TNetState = tnetSTATE_DEINIT;
 	return iRV < erSUCCESS ? iRV : erSUCCESS ;
 }
 
