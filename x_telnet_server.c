@@ -178,14 +178,16 @@ int	xTelnetFlushBuf(void) {
 	if (iRV) {
 		xTelnetWriteBlock(iRV);
 		iRV	= xStdioBufBlock();
-		if (iRV)
 			xTelnetWriteBlock(iRV);
+		if (iRV) {
+		}
 		xTelnetHandleSGA();
 	}
 	IF_myASSERT(debugTRACK, xStdioBufBlock() == 0);
-	if (iRV < erSUCCESS)
+	if (iRV < erSUCCESS) {
 		TNetState = tnetSTATE_DEINIT;
 	return iRV < erSUCCESS ? iRV : erSUCCESS ;
+	}
 }
 
 /**
@@ -268,30 +270,40 @@ void vTelnetUpdateOption(void) {
 int	xTelnetParseChar(int cChr) {
 	switch (TNetSubSt) {
 	case tnetSUBST_CHECK:
-		if (cChr == tnetIAC)
+		if (cChr == tnetIAC) {
 			TNetSubSt = tnetSUBST_IAC ;
-		else if (cChr != tnetGA)
+		} else if (cChr != tnetGA) {
 			return cChr ;								// RETURN the character
+		}
 		break ;
-#if 0
-		if (cChr == tnetIAC) 		{ TNetSubSt = tnetSUBST_IAC ;	}
-		else if (cChr == tnetGA)	{ return erSUCCESS ;			}
-		else						{ return cChr ;					}					// RETURN the character
-		break ;
-#endif
 	case tnetSUBST_IAC:
 		switch (cChr) {
-		case tnetSB:	TNetSubSt	= tnetSUBST_SB ;							break ;
+		case tnetSB:
+			TNetSubSt = tnetSUBST_SB;
+			break;
 		case tnetWILL:
 		case tnetWONT:
 		case tnetDO:
-		case tnetDONT:	sTerm.code	= cChr ;	TNetSubSt = tnetSUBST_OPT ;		break ;
-		case tnetIAC:	TNetSubSt	= tnetSUBST_CHECK ;							return cChr ;	// RETURN 2nd IAC
-		default: TNetSubSt	= tnetSUBST_CHECK ;
+		case tnetDONT:
+			sTerm.code = cChr;
+			TNetSubSt = tnetSUBST_OPT;
+			break;
+		case tnetIAC:
+			TNetSubSt = tnetSUBST_CHECK;
+			return cChr ;								// RETURN 2nd IAC
+		default:
+			TNetSubSt = tnetSUBST_CHECK;
 		}
 		break ;
-	case tnetSUBST_SB:	sTerm.code	= cChr ; sTerm.optlen = 0 ;	TNetSubSt = tnetSUBST_OPTDAT ;	break ;	// option ie NAWS, SPEED, TYPE etc
-	case tnetSUBST_OPT:	vTelnetNegotiate(cChr, sTerm.code) ;	TNetSubSt = tnetSUBST_CHECK ;	break ;
+	case tnetSUBST_SB:									// option ie NAWS, SPEED, TYPE etc
+		sTerm.code	= cChr;
+		sTerm.optlen = 0;
+		TNetSubSt = tnetSUBST_OPTDAT;
+		break;
+	case tnetSUBST_OPT:
+		vTelnetNegotiate(cChr, sTerm.code);
+		TNetSubSt = tnetSUBST_CHECK;
+		break;
 	case tnetSUBST_OPTDAT:
 		if (cChr == tnetIAC) {
 			TNetSubSt = tnetSUBST_SE ;
@@ -338,8 +350,8 @@ int	xTelnetSetBaseline(void) {
 
 // ################### global functions, normally running in other task context ####################
 
-void	vTaskTelnet(void *pvParameters) {
-	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTELNET_MASK) ;
+void vTaskTelnet(void *pvParameters) {
+	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
 	int	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
@@ -348,8 +360,9 @@ void	vTaskTelnet(void *pvParameters) {
 	while (bRtosVerifyState(taskTELNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
 			EventBits_t CurStat = xRtosWaitStatusANY(flagL3_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
-			if ((CurStat & (flagL3_ANY)) == 0)
+			if ((CurStat & (flagL3_ANY)) == 0) {
 				continue;
+			}
 		}
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
@@ -419,9 +432,13 @@ void	vTaskTelnet(void *pvParameters) {
 					break ;
 				}
 				/* EAGAIN so unless completed OPTIONS phase (tnetSUBST_CHECK) try again */
-				if (TNetSubSt != tnetSUBST_CHECK) break;
+				if (TNetSubSt != tnetSUBST_CHECK) {
+					break;
+				}
 			} else {
-				if (xTelnetParseChar(cChr) == erSUCCESS) break;
+				if (xTelnetParseChar(cChr) == erSUCCESS) {
+					break;
+				}
 				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
 				IF_myASSERT(debugTRACK && TNetSubSt != tnetSUBST_CHECK, 0) ;
 			}
@@ -473,8 +490,9 @@ void	vTaskTelnet(void *pvParameters) {
 				break ;
 			}
 			// Step 2: check if not part of Telnet negotiation
-			if (xTelnetParseChar(cChr) == erSUCCESS)
-				break ;
+			if (xTelnetParseChar(cChr) == erSUCCESS) {
+				break;
+			}
 			// Step 3: Handle special (non-Telnet) characters
 			if (cChr == CHR_GS) {						// cntl + ']'
 				iRV = EOF ;
@@ -510,26 +528,26 @@ void vTaskTnetStatus(void) {
 
 }
 
-void	vTelnetReport(void) {
+void vTelnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
 		printfx("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 	}
 	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
-	#if	(debugTRACK)
+		#if	(debugTRACK)
 		if (ioB1GET(ioTNETtrack)) {
 			printfx("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
 			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
 				printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 			printfx("\n") ;
 		}
-	#endif
-	#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
+		#endif
+		#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
 		terminfo_t	TermInfo ;
 		vTerminalGetInfo(&TermInfo) ;
 		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", colourFG_CYAN,
 			attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
-	#endif
+		#endif
 	}
 }
