@@ -96,7 +96,7 @@ void vTelnetDeInit(int eCode) {
 	}
 	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
-	IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "deinit: err=%d '%s'\n",  eCode, esp_err_to_name(eCode)) ;
+	IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "deinit: iRV=%d '%s'\n",  eCode, esp_err_to_name(eCode)) ;
 }
 
 const char * xTelnetFindName(uint8_t opt) {
@@ -120,7 +120,7 @@ void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
 	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
 	sTerm.options[Xidx]	|= (cmd - tnetWILL) << Sidx ;
-	IF_TRACK(debugTRACK && ioB1GET(ioTNET), " -> %s\n", codename[cmd - tnetWILL]) ;
+	IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), " -> %s\n", codename[cmd - tnetWILL]) ;
 }
 
 /**
@@ -222,7 +222,7 @@ void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  *	Do Status
  */
 void vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
-	IF_TRACK(debugTRACK && ioB1GET(ioTNET), "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
+	IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
 	switch (opt) {
 	case tnetOPT_ECHO:		// Client must not (DONT) and server WILL
 		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDONT : tnetWILL) ;
@@ -353,7 +353,7 @@ void	vTaskTelnet(void *pvParameters) {
 			break;
 
 		case tnetSTATE_INIT:
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Init Start\n") ;
+			IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Init Start\n") ;
 			memset(&sServTNetCtx, 0 , sizeof(sServTNetCtx)) ;
 			sServTNetCtx.sa_in.sin_family	= AF_INET ;
 			sServTNetCtx.sa_in.sin_port		= htons(IP_PORT_TELNET) ;
@@ -370,14 +370,14 @@ void	vTaskTelnet(void *pvParameters) {
 			iRV = xNetOpen(&sServTNetCtx) ;			// default blocking state
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
-				IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "OPEN fail\n") ;
+				IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "OPEN fail\n") ;
 				vTaskDelay(pdMS_TO_TICKS(tnetMS_SOCKET)) ;
 				break ;
 			}
 			xRtosSetStatus(flagTNET_SERV) ;
 			memset(&sTerm, 0, sizeof(tnet_con_t)) ;
 			TNetState = tnetSTATE_WAITING ;
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Init OK, waiting\n") ;
+			IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Init OK, waiting\n") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
@@ -386,7 +386,7 @@ void	vTaskTelnet(void *pvParameters) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					iRV = sServTNetCtx.error ;
 					TNetState = tnetSTATE_DEINIT ;
-					IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "ACCEPT failed\n") ;
+					IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "ACCEPT failed\n") ;
 				}
 				break ;
 			}
@@ -396,14 +396,14 @@ void	vTaskTelnet(void *pvParameters) {
 			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_SOCKET);
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
-				IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Receive tOut failed\n") ;
+				IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Receive tOut failed\n") ;
 				break ;
 			}
 			TNetState = tnetSTATE_OPTIONS ;			// and start processing options
 			TNetSubSt = tnetSUBST_CHECK ;
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Accept OK\n") ;
+			IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Accept OK\n") ;
 			xTelnetSetBaseline() ;
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Baseline sent\n") ;
+			IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Baseline sent\n") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
@@ -428,7 +428,7 @@ void	vTaskTelnet(void *pvParameters) {
 			}
 			TNetState = tnetSTATE_AUTHEN ;				// no char, start authenticate
 			TNetSubSt = tnetSUBST_CHECK ;
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Options OK\n") ;
+			IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Options OK\n") ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
@@ -447,7 +447,7 @@ void	vTaskTelnet(void *pvParameters) {
 				}
 				break ;
 			}
-			IF_CTRACK(debugTRACK && ioB1GET(ioTNET), "Authentication OK\n") ;
+			IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "Authentication OK\n") ;
 #endif
 			// All options and authentication done, empty the buffer to the client
 			if (xTelnetFlushBuf() != erSUCCESS) {
@@ -505,7 +505,7 @@ void	vTelnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 	#if	(debugTRACK)
-		if (ioB1GET(ioTNET)) {
+		if (ioB1GET(ioTNETtrack)) {
 			printfx("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
 			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
 				printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
