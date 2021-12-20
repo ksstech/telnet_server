@@ -355,9 +355,9 @@ void vTaskTelnet(void *pvParameters) {
 	int	iRV = 0 ;
 	char cChr ;
 	TNetState = tnetSTATE_INIT ;
-	xRtosSetStateRUN(taskTELNET_MASK) ;
+	xRtosSetStateRUN(taskTNET_MASK) ;
 
-	while (bRtosVerifyState(taskTELNET_MASK)) {
+	while (bRtosVerifyState(taskTNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
 			EventBits_t CurStat = xRtosWaitStatusANY(flagL3_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
 			if ((CurStat & (flagL3_ANY)) == 0) {
