@@ -174,20 +174,22 @@ int xTelnetWriteBlock(int Size) {
 int	xTelnetFlushBuf(void) {
 	if (!xStdioBufAvail() || !bRtosCheckStatus(flagTNET_SERV|flagTNET_CLNT))
 		return erSUCCESS;
-	int	iRV	= xStdioBufBlock();
+	int Total = 0;
+	int	iRV = xStdioBufBlock();
 	if (iRV) {
-		xTelnetWriteBlock(iRV);
+		Total += xTelnetWriteBlock(iRV);
 		iRV	= xStdioBufBlock();
-			xTelnetWriteBlock(iRV);
 		if (iRV) {
+			Total += xTelnetWriteBlock(iRV);
 		}
 		xTelnetHandleSGA();
 	}
 	IF_myASSERT(debugTRACK, xStdioBufBlock() == 0);
 	if (iRV < erSUCCESS) {
 		TNetState = tnetSTATE_DEINIT;
-	return iRV < erSUCCESS ? iRV : erSUCCESS ;
 	}
+	IF_CPRINT(debugTRACK && ioB1GET(ioTNETtrack), "flush: Total =%d  iRV=%d '%s'\n", Total, iRV, esp_err_to_name(iRV)) ;
+	return (iRV < erSUCCESS) ? iRV : erSUCCESS ;
 }
 
 /**
