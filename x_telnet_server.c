@@ -335,7 +335,6 @@ int	xTelnetSetBaseline(void) {
 // ################### global functions, normally running in other task context ####################
 
 void	vTaskTelnet(void *pvParameters) {
-	IF_PRINT(debugTRACK && ioB1GET(ioStart), debugAPPL_MESS_UP) ;
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTELNET_MASK) ;
 	int	iRV = 0 ;
 	char cChr ;
@@ -493,8 +492,7 @@ void	vTaskTelnet(void *pvParameters) {
 	}
 	xTelnetFlushBuf() ;
 	vTelnetDeInit(0) ;
-	IF_PRINT(debugTRACK && ioB1GET(ioRstrt), debugAPPL_MESS_DN) ;
-	vTaskDelete(NULL) ;
+	vRtosTaskDelete(NULL);
 }
 
 void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, tskNO_AFFINITY) ; }
