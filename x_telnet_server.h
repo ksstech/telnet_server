@@ -70,7 +70,7 @@ enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB
 // ################################### GLOBAL Function Prototypes ##################################
 
 void	vTaskTelnet(void *) ;
-void	vTaskTelnetInit(void) ;
+void	vTaskTnetStatus(void) ;
 void	vTelnetReport(void) ;
 
 #ifdef __cplusplus

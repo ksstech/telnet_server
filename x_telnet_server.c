@@ -499,7 +499,16 @@ void	vTaskTelnet(void *pvParameters) {
 	vRtosTaskDelete(NULL);
 }
 
-void	vTaskTelnetInit(void) { xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, tskNO_AFFINITY) ; }
+void vTaskTnetStatus(void) {
+	if (ioB1GET(ioTNETstart)) {
+		xRtosClearStateRUN(taskTNET_MASK);
+		xRtosClearStateDELETE(taskTNET_MASK);
+		xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, tskNO_AFFINITY) ;
+	} else {
+		vRtosTaskTerminate(taskTNET_MASK) ;
+	}
+
+}
 
 void	vTelnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
