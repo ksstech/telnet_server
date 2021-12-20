@@ -155,8 +155,12 @@ int	xTelnetHandleSGA(void) {
 
 int xTelnetWriteBlock(int Size) {
 	int iRV = xNetWrite(&sTerm.sCtx, pcStdioBufTellRead(), Size);
-	if (iRV != Size)
-		SL_ERR("Incomplete write %d != %d", Size, iRV);
+	if (iRV < 0) {
+		SL_ERR("%s (%d)", esp_err_to_name(iRV), iRV);
+		iRV = 0;
+	} else if (iRV != Size) {
+		SL_WARN("Incomplete write %d != %d", Size, iRV);
+	}
 	vUBufStepRead(&sRTCvars.sRTCbuf, iRV);
 	vTelnetUpdateStats();
 	return iRV;
