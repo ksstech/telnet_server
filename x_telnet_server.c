@@ -540,10 +540,14 @@ void vTelnetReport(void) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 		#if	(debugTRACK)
 		if (ioB1GET(ioTNETtrack)) {
-			printfx("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
-			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx)
-				printfx("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
-			printfx("\n") ;
+			PRINT("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
+			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
+				if (idx == 17 || idx == 33) {
+					PRINT("\n\t");
+				}
+				PRINT("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+			}
+			PRINT("\n") ;
 		}
 		#endif
 		#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
