@@ -32,8 +32,8 @@
 #define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
 #define	debugRESULT					(debugFLAG_GLOBAL & debugFLAG & 0x8000)
 
-#define	tnetMS_SOCKET						500
-#define	tnetMS_READ_WRITE					70
+#define	tnetMS_SOCKET				500
+#define	tnetMS_READ_WRITE			70
 
 // ########################################## structures ###########################################
 
@@ -134,10 +134,12 @@ uint8_t	xTelnetGetOption(uint8_t opt) {
 }
 
 void vTelnetUpdateStats(void) {
-	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx)
-		sServTNetCtx.maxTx = sTerm.sCtx.maxTx ;
-	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx)
-		sServTNetCtx.maxRx = sTerm.sCtx.maxRx ;
+	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) {
+		sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
+	}
+	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx) {
+		sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
+	}
 }
 
 int	xTelnetHandleSGA(void) {
@@ -262,8 +264,9 @@ void vTelnetUpdateOption(void) {
 #else
 			SL_NOT("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2)));
 #endif
-		} else
+		} else {
 			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen );
+		}
 		break ;
 	default:
 		SL_ERR("Unsupported OPTION %d data (%d bytes)", sTerm.code, sTerm.optlen) ;
@@ -375,10 +378,10 @@ void vTaskTelnet(void *pvParameters) {
 		case tnetSTATE_INIT:
 			IF_CTRACK(debugTRACK && ioB1GET(ioTNETtrack), "init\n") ;
 			memset(&sServTNetCtx, 0 , sizeof(sServTNetCtx)) ;
-			sServTNetCtx.sa_in.sin_family	= AF_INET ;
-			sServTNetCtx.sa_in.sin_port		= htons(IP_PORT_TELNET) ;
-			sServTNetCtx.type	= SOCK_STREAM ;
-			sServTNetCtx.flags	|= SO_REUSEADDR ;
+			sServTNetCtx.sa_in.sin_family = AF_INET ;
+			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET) ;
+			sServTNetCtx.type = SOCK_STREAM ;
+			sServTNetCtx.flags |= SO_REUSEADDR ;
 		#if 0
 			sServTNetCtx.d_open				= 1 ;
 			sServTNetCtx.d_read				= 1 ;
@@ -534,7 +537,7 @@ void vTaskTnetStatus(void) {
 void vTelnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
-		printfx("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+		PRINT("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 	}
 	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
@@ -553,7 +556,7 @@ void vTelnetReport(void) {
 		#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
 		terminfo_t	TermInfo ;
 		vTerminalGetInfo(&TermInfo) ;
-		printfx("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", colourFG_CYAN,
+		PRINT("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", colourFG_CYAN,
 			attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
 		#endif
 	}
