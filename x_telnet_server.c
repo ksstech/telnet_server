@@ -507,11 +507,11 @@ void vTaskTelnet(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			xStdioBufLock(portMAX_DELAY);
-			setSYSFLAG(sysFLAG_RTCBUF_USE);
+			setSYSFLAGS(sysFLAG_RTCBUF_USE);
 			vCommandInterpret(cChr, 1);
 			halVARS_CheckChanges();
 			xTelnetFlushBuf();
-			clrSYSFLAG(sysFLAG_RTCBUF_USE);
+			clrSYSFLAGS(sysFLAG_RTCBUF_USE);
 			xStdioBufUnLock();
 			break ;
 
