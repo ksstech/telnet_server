@@ -174,9 +174,9 @@ int xTelnetWriteBlock(int Size) {
  *				0 (if socket closed) or other negative error code
  */
 int	xTelnetFlushBuf(void) {
-//	if (!xStdioBufAvail() || !bRtosCheckStatus(flagTNET_SERV|flagTNET_CLNT)) {
-//		return erSUCCESS;
-//	}
+	if (!xStdioBufAvail()) {
+		return erSUCCESS;
+	}
 	int Total = 0;
 	int	iRV = xStdioBufBlock();
 	if (iRV) {
