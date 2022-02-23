@@ -356,7 +356,7 @@ int	xTelnetSetBaseline(void) {
 
 // ################### global functions, normally running in other task context ####################
 
-void vTaskTelnet(void *pvParameters) {
+void vTnetTask(void *pvParameters) {
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
 	int	iRV = 0 ;
 	char cChr ;
@@ -523,18 +523,18 @@ void vTaskTelnet(void *pvParameters) {
 	vRtosTaskDelete(NULL);
 }
 
-void vTaskTnetStatus(void) {
+void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosClearStateRUN(taskTNET_MASK);
 		xRtosClearStateDELETE(taskTNET_MASK);
-		xRtosTaskCreate(vTaskTelnet, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, tskNO_AFFINITY) ;
+		xRtosTaskCreate(vTnetTask, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, tskNO_AFFINITY) ;
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK) ;
 	}
 
 }
 
-void vTelnetReport(void) {
+void vTnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
 		PRINT("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
