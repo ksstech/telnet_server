@@ -365,8 +365,8 @@ void vTnetTask(void *pvParameters) {
 
 	while (bRtosVerifyState(taskTNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
-			EventBits_t CurStat = xRtosWaitStatusANY(flagL3_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
-			if ((CurStat & (flagL3_ANY)) == 0) {
+			EventBits_t CurStat = xNetWaitLx(pdMS_TO_TICKS(tnetMS_SOCKET));
+			if (((CurStat & flagL3_STA) != flagL3_STA) && ((CurStat & flagLX_SAP) != flagLX_SAP)) {
 				continue;
 			}
 		}
