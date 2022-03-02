@@ -35,6 +35,8 @@
 #define	tnetMS_SOCKET				500
 #define	tnetMS_READ_WRITE			70
 
+#define	tnetAUTHENTICATE			0
+
 // ########################################## structures ###########################################
 
 typedef struct opts_t {									// used to decode known/supported options
@@ -84,7 +86,7 @@ static uint8_t		TNetSubSt ;
 
 // ####################################### private functions #######################################
 
-void vTelnetDeInit(int eCode) {
+static void vTelnetDeInit(int eCode) {
 	if (sTerm.sCtx.sd > 0) {
 		xNetClose(&sTerm.sCtx);
 	}
@@ -99,7 +101,7 @@ void vTelnetDeInit(int eCode) {
 	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "deinit: iRV=%d '%s'\n",  eCode, esp_err_to_name(eCode)) ;
 }
 
-const char * xTelnetFindName(uint8_t opt) {
+static const char * xTelnetFindName(uint8_t opt) {
 	uint8_t idx ;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
 		if (options.val[idx] == opt) {
@@ -114,7 +116,7 @@ const char * xTelnetFindName(uint8_t opt) {
  * @param option	ECHO ... START_TLS
  * @param code		WILL / WONT / DO / DONT
  */
-void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
+static void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
 	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT, uint8_t) && INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS, uint8_t)) ;
 	uint8_t	Xidx = opt / 4 ;							// 2 bits/value, 4 options/byte
 	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
@@ -128,12 +130,12 @@ void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
  * @param option	ECHO ... START_TLS
  * @return code		WILL / WONT / DO / DONT
  */
-uint8_t	xTelnetGetOption(uint8_t opt) {
+static uint8_t xTelnetGetOption(uint8_t opt) {
 	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS, uint8_t)) ;
 	return (sTerm.options[opt/4] >> ((opt % 4) * 2)) & 0x03  ;
 }
 
-void vTelnetUpdateStats(void) {
+static void vTelnetUpdateStats(void) {
 	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) {
 		sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
 	}
@@ -142,7 +144,7 @@ void vTelnetUpdateStats(void) {
 	}
 }
 
-int	xTelnetHandleSGA(void) {
+static int xTelnetHandleSGA(void) {
 	int iRV = xTelnetGetOption(tnetOPT_SGA) ;
 	if (iRV == valDONT || iRV == valWONT) {
 		char cGA = tnetGA ;
@@ -201,7 +203,7 @@ int	xTelnetFlushBuf(void) {
  * @param o2	Value
  * @return		erSUCCESS or (-) error code or (+) number of bytes (very unlikely)
  */
-void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
+static void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
 	char cBuf[3] = { tnetIAC, cmd, opt } ;
 	int iRV = xNetWrite(&sTerm.sCtx, cBuf, sizeof(cBuf)) ;
 	if (iRV == sizeof(cBuf)) {
@@ -232,7 +234,7 @@ void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
  *	Will TTYPE, NAWS, TSPEED, Remote Flow Control, LMODE, NEWENV
  *	Do Status
  */
-void vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
+static void vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
 	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
 	switch (opt) {
 	case tnetOPT_ECHO:		// Client must not (DONT) and server WILL
@@ -243,27 +245,27 @@ void vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
 		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDO : tnetWILL) ;
 		break ;
 
-#if		(buildTERMINAL_CONTROLS_CURSOR == 1)
+	#if (buildTERMINAL_CONTROLS_CURSOR == 1)
 	case tnetOPT_NAWS:									// can have functionality
 		vTelnetSendOption(opt, cmd==tnetWILL ? tnetDO : cmd==tnetWONT ? tnetDONT : cmd==tnetDO ? tnetWILL : tnetWONT) ;
 		break ;
-#endif
+	#endif
 
 	default:		// Client WILL/WONT, but Server DONT  <ALT>  Client DO/DONT but Server WONT
 		vTelnetSendOption(opt, cmd==tnetWILL || cmd==tnetWONT ? tnetDONT : tnetWONT) ;
 	}
 }
 
-void vTelnetUpdateOption(void) {
+static void vTelnetUpdateOption(void) {
 	switch (sTerm.code) {
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
-#if		(buildTERMINAL_CONTROLS_CURSOR == 1)		// NOT TESTED, check against RFC
+	#if	(buildTERMINAL_CONTROLS_CURSOR == 1)		// NOT TESTED, check against RFC
 			vTerminalSetSize(ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2))) ;
 			SL_INFO("Applied NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2)));
-#else
+	#else
 			SL_NOT("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *) sTerm.optdata), ntohs(*(unsigned short *) (sTerm.optdata + 2)));
-#endif
+	#endif
 		} else {
 			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen );
 		}
@@ -273,7 +275,7 @@ void vTelnetUpdateOption(void) {
 	}
 }
 
-int	xTelnetParseChar(int cChr) {
+static int xTelnetParseChar(int cChr) {
 	switch (TNetSubSt) {
 	case tnetSUBST_CHECK:
 		if (cChr == tnetIAC) {
@@ -330,7 +332,7 @@ int	xTelnetParseChar(int cChr) {
 	return erSUCCESS ;
 }
 
-int	xTelnetSetBaseline(void) {
+static int xTelnetSetBaseline(void) {
 	/*					Putty			MikroTik
 	 *	WONT	DONT	no echo			local echo
 	 *	WILL	DONT	no echo			no echo
@@ -356,7 +358,7 @@ int	xTelnetSetBaseline(void) {
 
 // ################### global functions, normally running in other task context ####################
 
-void vTnetTask(void *pvParameters) {
+static void vTnetTask(void *pvParameters) {
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
 	int	iRV = 0 ;
 	char cChr ;
@@ -459,14 +461,13 @@ void vTnetTask(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
-#if		(tnetAUTHENTICATE == 1) || (configPRODUCTION == 1)
-	#ifndef	configUSERNAME
-		#define	configUSERNAME					"TestUser"
-	#endif
-
-	#ifndef	configPASSWORD
-		#define	configPASSWORD					"TestPass"
-	#endif
+			#if	(tnetAUTHENTICATE == 1) || (configPRODUCTION == 1)
+			#ifndef	configUSERNAME
+				#define	configUSERNAME					"TestUser"
+			#endif
+			#ifndef	configPASSWORD
+				#define	configPASSWORD					"TestPass"
+			#endif
 			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					iRV = errno ;
@@ -475,7 +476,7 @@ void vTnetTask(void *pvParameters) {
 				break ;
 			}
 			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "auth ok\n") ;
-#endif
+			#endif
 			// All options and authentication done, empty the buffer to the client
 			if (xTelnetFlushBuf() != erSUCCESS) {
 				iRV = errno ;
@@ -523,11 +524,13 @@ void vTnetTask(void *pvParameters) {
 	vRtosTaskDelete(NULL);
 }
 
+#define	tnetSTACK_SIZE						(configMINIMAL_STACK_SIZE + 2048 + (flagSTACK * 256))
+
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosClearStateRUN(taskTNET_MASK);
 		xRtosClearStateDELETE(taskTNET_MASK);
-		xRtosTaskCreate(vTnetTask, "TNET", tnetSTACK_SIZE, 0, tnetPRIORITY, NULL, tskNO_AFFINITY) ;
+		xRtosTaskCreate(vTnetTask, "TNET", tnetSTACK_SIZE, 0, 3, NULL, tskNO_AFFINITY) ;
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK) ;
 	}
