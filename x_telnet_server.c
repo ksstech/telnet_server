@@ -478,7 +478,7 @@ static void vTnetTask(void *pvParameters) {
 			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "auth ok\n") ;
 			#endif
 			// All options and authentication done, empty the buffer to the client
-			if (xTelnetFlushBuf() != erSUCCESS) {
+			if (xCommandProcess(CHR_NUL, 0, 1, xTelnetFlushBuf, NULL, NULL) != erSUCCESS) {
 				iRV = errno ;
 				TNetState = tnetSTATE_DEINIT ;
 				break ;
@@ -507,19 +507,12 @@ static void vTnetTask(void *pvParameters) {
 				break ;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
-			xStdioBufLock(portMAX_DELAY);
-			setSYSFLAGS(sfRTCBUF_USE);
-			vCommandInterpret(cChr, 1);
-			halVARS_CheckChanges();
-			xTelnetFlushBuf();
-			clrSYSFLAGS(sfRTCBUF_USE);
-			xStdioBufUnLock();
+			xCommandProcess(cChr, 1, 1, xTelnetFlushBuf, NULL, NULL);
 			break ;
 
 		default: IF_myASSERT(debugTRACK, 0) ;
 		}
 	}
-	xTelnetFlushBuf() ;
 	vTelnetDeInit(0) ;
 	vRtosTaskDelete(NULL);
 }
