@@ -157,8 +157,8 @@ static int xTelnetHandleSGA(void) {
 	return erSUCCESS ;
 }
 
-int xTelnetWriteBlock(int Size) {
-	int iRV = xNetWrite(&sTerm.sCtx, pcStdioBufTellRead(), Size);
+int xTelnetWriteBlock(char * pBuf, ssize_t Size) {
+	int iRV = xNetWrite(&sTerm.sCtx, pBuf, Size);
 	if (iRV < 0) {
 		xSyslogError(__FUNCTION__, iRV);
 		iRV = 0;
@@ -171,29 +171,17 @@ int xTelnetWriteBlock(int Size) {
 }
 
 /**
- * xTelnetFlushBuf() -- send any/all buffered data immediately after connection established
- * @return		non-zero positive value if nothing to send or all successfully sent
- *				0 (if socket closed) or other negative error code
+ * @brief	send any/all buffered data immediately after connection established
+ * @return	non-zero positive value if nothing to send or all successfully sent
+ *			0 (if socket closed) or other negative error code
  */
-int	xTelnetFlushBuf(void) {
-	if (!xStdioBufAvail()) {
-		return erSUCCESS;
-	}
-	int Total = 0;
-	int	iRV = xStdioBufBlock();
-	if (iRV) {
-		Total += xTelnetWriteBlock(iRV);
-		iRV	= xStdioBufBlock();
-		if (iRV) {
-			Total += xTelnetWriteBlock(iRV);
-		}
+int xTelnetFlushBuf(void * pV, const char * pCC, ...) {
+	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
+	if (iRV > 0)
 		xTelnetHandleSGA();
-	}
 	IF_myASSERT(debugTRACK, xStdioBufBlock() == 0);
-	if (iRV < erSUCCESS) {
+	if (iRV < erSUCCESS)
 		TNetState = tnetSTATE_DEINIT;
-	}
-	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "flush: Total=%d  iRV=%d '%s'\n", Total, iRV, esp_err_to_name(iRV)) ;
 	return (iRV < erSUCCESS) ? iRV : erSUCCESS ;
 }
 
