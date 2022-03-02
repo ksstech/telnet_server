@@ -16,9 +16,6 @@ extern "C" {
 
 // ########################################### Macros ##############################################
 
-#define	tnetPRIORITY						3
-#define	tnetSTACK_SIZE						(configMINIMAL_STACK_SIZE + 1024 + (flagSTACK * 256))
-#define	tnetAUTHENTICATE					0
 
 // ######################################### enumerations ##########################################
 
@@ -69,9 +66,9 @@ enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB
 
 // ################################### GLOBAL Function Prototypes ##################################
 
-void	vTnetTask(void *) ;
-void	vTnetStartStop(void) ;
-void	vTnetReport(void) ;
+int xTelnetWriteBlock(char * pBuf, ssize_t Size);
+void vTnetStartStop(void) ;
+void vTnetReport(void) ;
 
 #ifdef __cplusplus
 }
