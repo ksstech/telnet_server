@@ -521,26 +521,26 @@ void vTnetStartStop(void) {
 void vTnetReport(void) {
 	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0) ;
-		PRINT("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
+		P("\tFSM=%d  maxTX=%u  maxRX=%u\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx) ;
 	}
 	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0) ;
 		#if	(debugTRACK)
 		if (ioB1GET(ioTNETtrack)) {
-			PRINT("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
+			P("%CTNETxxx%C\t", colourFG_CYAN, attrRESET) ;
 			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
 				if (idx == 17 || idx == 33) {
-					PRINT("\n\t");
+					P("\n\t");
 				}
-				PRINT("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
+				P("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 			}
-			PRINT("\n") ;
+			P("\n") ;
 		}
 		#endif
 		#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
 		terminfo_t	TermInfo ;
 		vTerminalGetInfo(&TermInfo) ;
-		PRINT("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", colourFG_CYAN,
+		P("%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\n", colourFG_CYAN,
 			attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
 		#endif
 	}
