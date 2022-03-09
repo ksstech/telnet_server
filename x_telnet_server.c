@@ -371,7 +371,7 @@ static void vTnetTask(void *pvParameters) {
 			sServTNetCtx.sa_in.sin_family = AF_INET ;
 			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET) ;
 			sServTNetCtx.type = SOCK_STREAM ;
-			sServTNetCtx.flags |= SO_REUSEADDR ;
+			sServTNetCtx.flags = SO_REUSEADDR;
 		#if 0
 			sServTNetCtx.d_open				= 1 ;
 			sServTNetCtx.d_read				= 1 ;
