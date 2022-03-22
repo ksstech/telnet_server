@@ -155,7 +155,7 @@ static int xTelnetHandleSGA(void) {
 		char cGA = tnetGA ;
 		iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
 		if (iRV != sizeof(cGA)) {
-			vTelnetDeInit(iRV) ;
+			vTelnetDeInit();
 			return erFAILURE ;
 		}
 	}
