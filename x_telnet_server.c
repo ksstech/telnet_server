@@ -488,7 +488,9 @@ static void vTnetTask(void *pvParameters) {
 			if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
 				break;
 			}
-			// Step 3: Handle special (non-Telnet) characters
+			// Step 3: Ensure UARTx marked inactive
+			clrSYSFLAGS(sfU0ACTIVE << configSTDIO_UART_CHAN);
+			// Step 4: Handle special (non-Telnet) characters
 			if (caChr[0] == CHR_GS) {						// cntl + ']'
 				TNetState = tnetSTATE_DEINIT;
 				break;
