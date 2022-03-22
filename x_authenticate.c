@@ -23,7 +23,7 @@
 
 // ######################################## Public functions #######################################
 
-char cBS[3] = { CHR_BS, CHR_SPACE, CHR_BS } ;
+const char cBS[3] = { CHR_BS, CHR_SPACE, CHR_BS } ;
 
 int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 	uint8_t	Idx = 0, cChr ;
@@ -60,16 +60,20 @@ int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 		}
 		vTaskDelay(50) ;
 	}
-	if (cChr == '\r') write(sd, "\r\n", 2) ;
+	if (cChr == '\r')
+		write(sd, "\r\n", 2) ;
 	return Idx ;
 }
 
 int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
 	char Buf[35];
-	if (pcPrompt) dprintfx(sd, pcPrompt);
+	if (pcPrompt)
+		dprintfx(sd, pcPrompt);
 	int iRV = xReadString(sd, Buf, sizeof(Buf), bEcho);
-	if (iRV <= 0) return erFAILURE;
-	if (strcmp((char *) Buf, pcKey) != 0) return erFAILURE;
+	if (iRV <= 0)
+		return erFAILURE;
+	if (strcmp((char *) Buf, pcKey) != 0)
+		return erFAILURE;
 	return erSUCCESS;
 }
 
