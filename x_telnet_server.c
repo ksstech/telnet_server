@@ -407,7 +407,7 @@ static void vTnetTask(void *pvParameters) {
 				}
 				break ;
 			}
-			xRtosSetStatus(flagTNET_CLNT) ;
+			xRtosSetStatus(flagTNET_CLNT);
 
 			// setup timeout for processing options
 			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_SOCKET);
