@@ -8,6 +8,11 @@
 
 #include	"x_telnet_server.h"
 #include	"x_authenticate.h"
+
+#include	"hal_variables.h"
+#include	"FreeRTOS_Support.h"
+#include	"socketsX.h"
+
 #include	"commands.h"
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include	"syslog.h"

@@ -4,12 +4,6 @@
 
 #pragma once
 
-#include	"hal_variables.h"
-#include	"FreeRTOS_Support.h"
-
-#include	"socketsX.h"
-#include	"x_ubuf.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
