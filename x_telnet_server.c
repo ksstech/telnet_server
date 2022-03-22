@@ -91,7 +91,7 @@ static uint8_t		TNetSubSt ;
 
 // ####################################### private functions #######################################
 
-static void vTelnetDeInit(int eCode) {
+static void vTelnetDeInit(void) {
 	if (sTerm.sCtx.sd > 0) {
 		xNetClose(&sTerm.sCtx);
 	}
@@ -103,7 +103,7 @@ static void vTelnetDeInit(int eCode) {
 	}
 	xRtosClearStatus(flagTNET_SERV) ;
 	TNetState = tnetSTATE_INIT ;
-	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "deinit: iRV=%d '%s'\n",  eCode, esp_err_to_name(eCode)) ;
+	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "deinit\n") ;
 }
 
 static const char * xTelnetFindName(uint8_t opt) {
@@ -367,7 +367,7 @@ static void vTnetTask(void *pvParameters) {
 		}
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
-			vTelnetDeInit(iRV);		// must NOT fall through, IP Lx might have changed
+			vTelnetDeInit();		// must NOT fall through, IP Lx might have changed
 			break;
 
 		case tnetSTATE_INIT:
@@ -402,7 +402,6 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_SOCKET));
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
-					iRV = sServTNetCtx.error ;
 					TNetState = tnetSTATE_DEINIT ;
 					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept() fail\n") ;
 				}
@@ -463,7 +462,6 @@ static void vTnetTask(void *pvParameters) {
 			#endif
 			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
-					iRV = errno ;
 					TNetState = tnetSTATE_DEINIT ;
 				}
 				break ;
@@ -480,7 +478,6 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
 			if (iRV != sizeof(cChr)) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
-					iRV = sTerm.sCtx.error ;
 					TNetState = tnetSTATE_DEINIT ;
 				}
 				break ;
@@ -491,7 +488,6 @@ static void vTnetTask(void *pvParameters) {
 			}
 			// Step 3: Handle special (non-Telnet) characters
 			if (cChr == CHR_GS) {						// cntl + ']'
-				iRV = EOF ;
 				TNetState = tnetSTATE_DEINIT ;
 				break ;
 			}
@@ -502,7 +498,7 @@ static void vTnetTask(void *pvParameters) {
 		default: IF_myASSERT(debugTRACK, 0) ;
 		}
 	}
-	vTelnetDeInit(0) ;
+	vTelnetDeInit() ;
 	vRtosTaskDelete(NULL);
 }
 
