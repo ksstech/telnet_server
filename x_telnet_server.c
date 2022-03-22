@@ -453,7 +453,7 @@ static void vTnetTask(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
-			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
+			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					TNetState = tnetSTATE_DEINIT ;
 					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "authen fail (%d)\n", sTerm.sCtx.error);
@@ -461,7 +461,6 @@ static void vTnetTask(void *pvParameters) {
 				break ;
 			}
 			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "auth ok\n") ;
-			#endif
 			// All options and authentication done, empty the buffer to the client
 			xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
 			TNetState = tnetSTATE_RUNNING ;
