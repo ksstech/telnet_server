@@ -203,7 +203,7 @@ static void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
 		xTelnetSetOption(opt, cmd) ;
 		vTelnetUpdateStats() ;
 	} else {
-		vTelnetDeInit(iRV) ;
+		vTelnetDeInit();
 	}
 }
 
