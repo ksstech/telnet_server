@@ -371,7 +371,7 @@ static void vTnetTask(void *pvParameters) {
 			break;
 
 		case tnetSTATE_INIT:
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "init\n") ;
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "init\n");
 			memset(&sServTNetCtx, 0 , sizeof(sServTNetCtx)) ;
 			sServTNetCtx.sa_in.sin_family = AF_INET ;
 			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET) ;
@@ -402,8 +402,8 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_SOCKET));
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
-					TNetState = tnetSTATE_DEINIT ;
 					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept() fail\n") ;
+					TNetState = tnetSTATE_DEINIT;
 				}
 				break ;
 			}
@@ -416,9 +416,9 @@ static void vTnetTask(void *pvParameters) {
 				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "rx timeout\n") ;
 				break ;
 			}
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept ok\n") ;
 			TNetState = tnetSTATE_OPTIONS ;			// and start processing options
 			TNetSubSt = tnetSUBST_CHECK ;
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept() ok\n") ;
 			xTelnetSetBaseline() ;
 			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "baseline ok\n") ;
 			/* FALLTHRU */ /* no break */
@@ -478,18 +478,18 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetRead(&sTerm.sCtx, caChr, 1);
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
-					TNetState = tnetSTATE_DEINIT ;
+					TNetState = tnetSTATE_DEINIT;
 				}
-				break ;
+				break;
 			}
 			// Step 2: check if not part of Telnet negotiation
 			if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
 				break;
 			}
 			// Step 3: Handle special (non-Telnet) characters
-				TNetState = tnetSTATE_DEINIT ;
-				break ;
 			if (caChr[0] == CHR_GS) {						// cntl + ']'
+				TNetState = tnetSTATE_DEINIT;
+				break;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			caChr[1] = 0;
