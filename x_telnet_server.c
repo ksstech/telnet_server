@@ -388,7 +388,7 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetOpen(&sServTNetCtx) ;			// default blocking state
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
-				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "open() fail\n") ;
+				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "open fail (%d\n", sServTNetCtx.error);
 				vTaskDelay(pdMS_TO_TICKS(tnetMS_SOCKET)) ;
 				break ;
 			}
@@ -402,8 +402,8 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_SOCKET));
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
-					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept() fail\n") ;
 					TNetState = tnetSTATE_DEINIT;
+					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept fail (%d)\n", sServTNetCtx.error);
 				}
 				break ;
 			}
@@ -463,6 +463,7 @@ static void vTnetTask(void *pvParameters) {
 			if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					TNetState = tnetSTATE_DEINIT ;
+					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "authen fail (%d)\n", sTerm.sCtx.error);
 				}
 				break ;
 			}
@@ -479,6 +480,7 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
 					TNetState = tnetSTATE_DEINIT;
+					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "read fail (%d)\n", sTerm.sCtx.error);
 				}
 				break;
 			}
