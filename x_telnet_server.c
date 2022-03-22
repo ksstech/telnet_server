@@ -354,7 +354,7 @@ static int xTelnetSetBaseline(void) {
 static void vTnetTask(void *pvParameters) {
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
 	int	iRV = 0 ;
-	char cChr ;
+	char caChr[2];
 	TNetState = tnetSTATE_INIT ;
 	xRtosSetStateRUN(taskTNET_MASK) ;
 
@@ -424,8 +424,8 @@ static void vTnetTask(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
-			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
-			if (iRV != sizeof(cChr)) {
+			iRV = xNetRead(&sTerm.sCtx, caChr, 1) ;
+			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {	// socket closed or error (excl EAGAIN)
 					iRV = sTerm.sCtx.error ;
 					TNetState = tnetSTATE_DEINIT ;
@@ -436,7 +436,7 @@ static void vTnetTask(void *pvParameters) {
 					break;
 				}
 			} else {
-				if (xTelnetParseChar(cChr) == erSUCCESS) {
+				if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
 					break;
 				}
 				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
@@ -469,30 +469,31 @@ static void vTnetTask(void *pvParameters) {
 			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "auth ok\n") ;
 			#endif
 			// All options and authentication done, empty the buffer to the client
-			xCommandProcess(CHR_NUL, 0, 0, xTelnetFlushBuf, NULL, NULL);
+			xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
 			TNetState = tnetSTATE_RUNNING ;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_RUNNING:
 			// Step 1: read a single character
-			iRV = xNetRead(&sTerm.sCtx, &cChr, sizeof(cChr)) ;
-			if (iRV != sizeof(cChr)) {
+			iRV = xNetRead(&sTerm.sCtx, caChr, 1);
+			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
 					TNetState = tnetSTATE_DEINIT ;
 				}
 				break ;
 			}
 			// Step 2: check if not part of Telnet negotiation
-			if (xTelnetParseChar(cChr) == erSUCCESS) {
+			if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
 				break;
 			}
 			// Step 3: Handle special (non-Telnet) characters
-			if (cChr == CHR_GS) {						// cntl + ']'
 				TNetState = tnetSTATE_DEINIT ;
 				break ;
+			if (caChr[0] == CHR_GS) {						// cntl + ']'
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
-			xCommandProcess(cChr, 1, 0, xTelnetFlushBuf, NULL, NULL);
+			caChr[1] = 0;
+			xCommandProcessString(&caChr[0], 0, xTelnetFlushBuf, NULL, NULL);
 			break ;
 
 		default: IF_myASSERT(debugTRACK, 0) ;
