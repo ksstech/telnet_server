@@ -162,34 +162,6 @@ static int xTelnetHandleSGA(void) {
 	return erSUCCESS ;
 }
 
-int xTelnetWriteBlock(char * pBuf, ssize_t Size) {
-	int iRV = xNetWrite(&sTerm.sCtx, pBuf, Size);
-	if (iRV < 0) {
-		xSyslogError(__FUNCTION__, iRV);
-		iRV = 0;
-	} else if (iRV != Size) {
-		SL_WARN("Incomplete write %d != %d", Size, iRV);
-	}
-	vUBufStepRead(&sRTCvars.sRTCbuf, iRV);
-	vTelnetUpdateStats();
-	return iRV;
-}
-
-/**
- * @brief	send any/all buffered data immediately after connection established
- * @return	non-zero positive value if nothing to send or all successfully sent
- *			0 (if socket closed) or other negative error code
- */
-int xTelnetFlushBuf(void * pV, const char * pCC, ...) {
-	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
-	if (iRV > 0)
-		xTelnetHandleSGA();
-	IF_myASSERT(debugTRACK, xStdioBufBlock() == 0);
-	if (iRV < erSUCCESS)
-		TNetState = tnetSTATE_DEINIT;
-	return (iRV < erSUCCESS) ? iRV : erSUCCESS ;
-}
-
 /**
  * xTelnetSendOptions() - send a single option to the client
  * @param o1	Option
@@ -349,8 +321,40 @@ static int xTelnetSetBaseline(void) {
 	return erSUCCESS ;
 }
 
-// ################### global functions, normally running in other task context ####################
+/**
+ * @brief	Write a block of data to the client device socket
+ * @return	number of bytes written or 0 if error
+ */
+int xTelnetWriteBlock(char * pBuf, ssize_t Size) {
+	int iRV = xNetWrite(&sTerm.sCtx, pBuf, Size);
+	if (iRV < 0) {
+		xSyslogError(__FUNCTION__, iRV);
+		iRV = 0;
+	} else if (iRV != Size) {
+		SL_WARN("Incomplete write %d != %d", Size, iRV);
+	}
+	vUBufStepRead(&sRTCvars.sRTCbuf, iRV);
+	vTelnetUpdateStats();
+	return iRV;
+}
 
+/**
+ * @brief	send any/all buffered data to client
+ * @return	non-zero positive value if nothing to send or all successfully sent
+ *			0 (if socket closed) or other negative error code
+ */
+int xTelnetFlushBuf(void * pV, const char * pCC, va_list vaList) {
+	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
+	if (iRV > 0)
+		xTelnetHandleSGA();
+	if (iRV < erSUCCESS)
+		TNetState = tnetSTATE_DEINIT;
+	return (iRV < erSUCCESS) ? iRV : erSUCCESS;
+}
+
+/**
+ * @brief	Main TelNet task
+ */
 static void vTnetTask(void *pvParameters) {
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
 	int	iRV = 0 ;
@@ -473,6 +477,8 @@ static void vTnetTask(void *pvParameters) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
 					TNetState = tnetSTATE_DEINIT;
 					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "read fail (%d)\n", sTerm.sCtx.error);
+				} else {
+					xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
 				}
 				break;
 			}
@@ -489,7 +495,7 @@ static void vTnetTask(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			caChr[1] = 0;
-			xCommandProcessString(&caChr[0], 0, xTelnetFlushBuf, NULL, NULL);
+			xCommandProcessString(&caChr[0], 1, xTelnetFlushBuf, NULL, NULL);
 			break ;
 
 		default: IF_myASSERT(debugTRACK, 0) ;
@@ -499,7 +505,7 @@ static void vTnetTask(void *pvParameters) {
 	vRtosTaskDelete(NULL);
 }
 
-#define	tnetSTACK_SIZE						(configMINIMAL_STACK_SIZE + 2048 + (flagSTACK * 256))
+#define	tnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 2048 + (flagSTACK * 256))
 
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
@@ -509,7 +515,6 @@ void vTnetStartStop(void) {
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK) ;
 	}
-
 }
 
 void vTnetReport(void) {
