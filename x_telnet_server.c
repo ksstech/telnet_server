@@ -16,7 +16,7 @@
 #include	"commands.h"
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include	"syslog.h"
-#include	"hal_usart.h"
+#include	"hal_stdio.h"
 #include	"x_terminal.h"
 #include	"x_errors_events.h"
 
