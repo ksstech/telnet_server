@@ -30,7 +30,7 @@ int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 	while (1) {
 		int iRV = read(sd, &cChr, sizeof(cChr)) ;
 		if (iRV == 1) {
-			if (cChr == '\r') {							// end of input
+			if (cChr == CHR_CR) {							// end of input
 				pcBuf[Idx] = 0 ;
 				break ;
 			} else if (cChr == CHR_BS) {				// correct typo
@@ -40,7 +40,7 @@ int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 					cChr = CHR_BEL ;					// else buffer empty, ring the bell..
 				}
 			} else if (Idx < (Size-1)) {				// space left in buffer ?
-				if (INRANGE(' ', cChr, '~', char)) {	// & valid char ?
+				if (INRANGE(CHR_SPACE, cChr, CHR_TILDE, char)) {	// & valid char ?
 					pcBuf[Idx++] = cChr ;				// store in buffer
 				} else {
 					cChr = 0 ;
@@ -60,7 +60,7 @@ int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 		}
 		vTaskDelay(50) ;
 	}
-	if (cChr == '\r')
+	if (cChr == CHR_CR)
 		write(sd, "\r\n", 2) ;
 	return Idx ;
 }
