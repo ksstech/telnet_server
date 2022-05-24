@@ -2,15 +2,11 @@
  * x_authenticate.c
  */
 
-#include	"FreeRTOS_Support.h"
-
-#include	"x_authenticate.h"
-#include	"x_errors_events.h"
-#include	"socketsX.h"
-#include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
-
-#include	<stdio.h>
-#include	<string.h>
+#include "FreeRTOS_Support.h"
+#include "x_authenticate.h"
+#include "x_errors_events.h"
+#include "socketsX.h"
+#include "printfx.h"									// +x_definitions +stdarg +stdint +stdio
 
 // ############################### BUILD: debug configuration options ##############################
 
