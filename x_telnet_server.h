@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "definitions.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,7 +62,7 @@ enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB
 
 // ################################### GLOBAL Function Prototypes ##################################
 
-int xTelnetWriteBlock(char * pBuf, ssize_t Size);
+int xTelnetWriteBlock(u8_t * pBuf, ssize_t Size);
 void vTnetStartStop(void) ;
 void vTnetReport(void) ;
 

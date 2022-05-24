@@ -152,7 +152,7 @@ static void vTelnetUpdateStats(void) {
 static int xTelnetHandleSGA(void) {
 	int iRV = xTelnetGetOption(tnetOPT_SGA) ;
 	if (iRV == valDONT || iRV == valWONT) {
-		char cGA = tnetGA ;
+		u8_t cGA = tnetGA ;
 		iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
 		if (iRV != sizeof(cGA)) {
 			vTelnetDeInit();
@@ -169,7 +169,7 @@ static int xTelnetHandleSGA(void) {
  * @return		erSUCCESS or (-) error code or (+) number of bytes (very unlikely)
  */
 static void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
-	char cBuf[3] = { tnetIAC, cmd, opt } ;
+	u8_t cBuf[3] = { tnetIAC, cmd, opt } ;
 	int iRV = xNetWrite(&sTerm.sCtx, cBuf, sizeof(cBuf)) ;
 	if (iRV == sizeof(cBuf)) {
 		xTelnetSetOption(opt, cmd) ;
@@ -325,7 +325,7 @@ static int xTelnetSetBaseline(void) {
  * @brief	Write a block of data to the client device socket
  * @return	number of bytes written or 0 if error
  */
-int xTelnetWriteBlock(char * pBuf, ssize_t Size) {
+int xTelnetWriteBlock(u8_t * pBuf, ssize_t Size) {
 	int iRV = xNetWrite(&sTerm.sCtx, pBuf, Size);
 	if (iRV < 0) {
 		xSyslogError(__FUNCTION__, iRV);
@@ -358,7 +358,7 @@ int xTelnetFlushBuf(void * pV, const char * pCC, va_list vaList) {
 static void vTnetTask(void *pvParameters) {
 	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
 	int	iRV = 0 ;
-	char caChr[2];
+	u8_t caChr[2];
 	TNetState = tnetSTATE_INIT ;
 	xRtosSetStateRUN(taskTNET_MASK) ;
 
@@ -428,7 +428,7 @@ static void vTnetTask(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
-			iRV = xNetRead(&sTerm.sCtx, caChr, 1) ;
+			iRV = xNetRead(&sTerm.sCtx, (u8_t *) caChr, 1) ;
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {	// socket closed or error (excl EAGAIN)
 					iRV = sTerm.sCtx.error ;
@@ -495,7 +495,7 @@ static void vTnetTask(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			caChr[1] = 0;
-			xCommandProcessString(&caChr[0], 1, xTelnetFlushBuf, NULL, NULL);
+			xCommandProcessString((char *) caChr, 1, xTelnetFlushBuf, NULL, NULL);
 			break ;
 
 		default: IF_myASSERT(debugTRACK, 0) ;
