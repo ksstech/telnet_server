@@ -1,5 +1,6 @@
 /*
  * x_authenticate.c
+ * Copyright (c) 2017-22 Andre M. Maree / KSS Technologies (Pty) Ltd.
  */
 
 #include "FreeRTOS_Support.h"
@@ -10,7 +11,7 @@
 
 // ############################### BUILD: debug configuration options ##############################
 
-#define	debugFLAG					0xC000
+#define	debugFLAG					0xF000
 
 #define	debugTIMING					(debugFLAG_GLOBAL & debugFLAG & 0x1000)
 #define	debugTRACK					(debugFLAG_GLOBAL & debugFLAG & 0x2000)
