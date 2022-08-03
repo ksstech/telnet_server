@@ -413,7 +413,7 @@ static void vTnetTask(void *pvParameters) {
 			xRtosSetStatus(flagTNET_CLNT);
 
 			// setup timeout for processing options
-			iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_SOCKET);
+			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetMS_SOCKET);
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "rx timeout\r\n") ;
@@ -446,7 +446,7 @@ static void vTnetTask(void *pvParameters) {
 				IF_myASSERT(debugTRACK && TNetSubSt != tnetSUBST_CHECK, 0) ;
 			}
 			// setup timeout for processing normal comms
-			if ((iRV = xNetSetRecvTimeOut(&sTerm.sCtx, tnetMS_READ_WRITE)) != erSUCCESS) {
+			if ((iRV = xNetSetRecvTO(&sTerm.sCtx, tnetMS_READ_WRITE)) != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT ;
 				break ;
 			}
