@@ -121,7 +121,7 @@ static const char * xTelnetFindName(uint8_t opt) {
  * @param code		WILL / WONT / DO / DONT
  */
 static void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
-	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT, uint8_t) && INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS, uint8_t)) ;
+	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT) && INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS)) ;
 	uint8_t	Xidx = opt / 4 ;							// 2 bits/value, 4 options/byte
 	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
@@ -135,8 +135,8 @@ static void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
  * @return code		WILL / WONT / DO / DONT
  */
 static uint8_t xTelnetGetOption(uint8_t opt) {
-	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS, uint8_t)) ;
-	return (sTerm.options[opt/4] >> ((opt % 4) * 2)) & 0x03  ;
+	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS));
+	return (sTerm.options[opt/4] >> ((opt % 4) * 2)) & 0x03;
 }
 
 static void vTelnetUpdateStats(void) {

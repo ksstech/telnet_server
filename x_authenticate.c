@@ -37,7 +37,7 @@ int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 					cChr = CHR_BEL ;					// else buffer empty, ring the bell..
 				}
 			} else if (Idx < (Size-1)) {				// space left in buffer ?
-				if (INRANGE(CHR_SPACE, cChr, CHR_TILDE, char)) {	// & valid char ?
+				if (INRANGE(CHR_SPACE, cChr, CHR_TILDE)) {	// & valid char ?
 					pcBuf[Idx++] = cChr ;				// store in buffer
 				} else {
 					cChr = 0 ;
