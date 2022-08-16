@@ -532,7 +532,7 @@ void vTnetReport(void) {
 				}
 				P("%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]) ;
 			}
-			P("\r\n") ;
+			P(strCRLF) ;
 		}
 		#endif
 		#if	(buildTERMINAL_CONTROLS_CURSOR == 1)
