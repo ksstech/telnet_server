@@ -36,6 +36,10 @@
 #define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
 #define	debugRESULT					(debugFLAG_GLOBAL & debugFLAG & 0x8000)
 
+// ####################################### Macros ##################################################
+
+#define	tnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 2048 + (flagSTACK * 256))
+
 #define	tnetMS_SOCKET				500
 #define	tnetMS_READ_WRITE			70
 
@@ -82,6 +86,9 @@ opts_t options = {
 } ;
 
 // ####################################### Public Variables ########################################
+
+StaticTask_t ttsTNET = { 0 };
+StackType_t tsbTNET[tnetSTACK_SIZE] = { 0 };
 
 static netx_t	sServTNetCtx = { 0 } ;
 static tnet_con_t	sTerm = { 0 } ;
@@ -364,7 +371,8 @@ static void vTnetTask(void *pvParameters) {
 	while (bRtosVerifyState(taskTNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
 			EventBits_t CurStat = xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
-			if (((CurStat & flagL3_STA) != flagL3_STA) && ((CurStat & flagLX_SAP) != flagLX_SAP)) {
+			if ((CurStat & flagL3_STA) != flagL3_STA &&
+				(CurStat & flagLX_SAP) != flagLX_SAP) {
 				continue;
 			}
 		}
@@ -504,13 +512,11 @@ static void vTnetTask(void *pvParameters) {
 	vRtosTaskDelete(NULL);
 }
 
-#define	tnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 2048 + (flagSTACK * 256))
-
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosClearStateRUN(taskTNET_MASK);
 		xRtosClearStateDELETE(taskTNET_MASK);
-		xRtosTaskCreate(vTnetTask, "TNET", tnetSTACK_SIZE, 0, 3, NULL, tskNO_AFFINITY) ;
+		xRtosTaskCreateStatic(vTnetTask, "TNET", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY) ;
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK) ;
 	}
