@@ -48,11 +48,30 @@ enum tnetOPT {
 	tnetOPT_UNDEF		= 255,
 } ;
 
-enum tnetOPT_VAL { valWILL, valWONT, valDO, valDONT } ;
+enum tnetOPT_VAL {
+	valWILL,
+	valWONT,
+	valDO,
+	valDONT
+};
 
-enum tnetSTATE { tnetSTATE_DEINIT = 1, tnetSTATE_INIT, tnetSTATE_WAITING, tnetSTATE_OPTIONS, tnetSTATE_AUTHEN, tnetSTATE_RUNNING } ;
+enum tnetSTATE {
+	tnetSTATE_DEINIT = 1,
+	tnetSTATE_INIT,
+	tnetSTATE_WAITING,
+	tnetSTATE_OPTIONS,
+	tnetSTATE_AUTHEN,
+	tnetSTATE_RUNNING
+};
 
-enum tnetSUBST { tnetSUBST_CHECK = 1, tnetSUBST_IAC, tnetSUBST_OPT, tnetSUBST_SB, tnetSUBST_OPTDAT, tnetSUBST_SE } ;
+enum tnetSUBST {
+	tnetSUBST_CHECK = 1,
+	tnetSUBST_IAC,
+	tnetSUBST_OPT,
+	tnetSUBST_SB,
+	tnetSUBST_OPTDAT,
+	tnetSUBST_SE
+};
 
 // ########################################## structures ###########################################
 
