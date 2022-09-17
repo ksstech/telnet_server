@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "hal_variables.h"
 #include "x_telnet_server.h"
 #include "x_authenticate.h"
 
-#include "hal_variables.h"
 #include "FreeRTOS_Support.h"
 #include "socketsX.h"
 
@@ -127,8 +127,10 @@ static const char * xTelnetFindName(u8_t opt) {
  * @param option	ECHO ... START_TLS
  * @param code		WILL / WONT / DO / DONT
  */
-	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT) && INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS)) ;
 static void xTelnetSetOption(u8_t opt, u8_t cmd) {
+	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "o=%d  c=%d", opt, cmd);
+	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT));
+	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS));
 	u8_t	Xidx = opt / 4 ;							// 2 bits/value, 4 options/byte
 	u8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
