@@ -48,23 +48,23 @@
 // ########################################## structures ###########################################
 
 typedef struct opts_t {									// used to decode known/supported options
-	uint8_t		val[10] ;
+	u8_t		val[10] ;
 	const char *name[10] ;
 } opts_t ;
 
 typedef	struct tnet_con_t {
 	netx_t	sCtx ;
-	uint8_t	optdata[35] ;
-	uint8_t	optlen ;
-	uint8_t	code ;
-	uint8_t	options[(tnetOPT_MAX_VAL+3)/4] ;
+	u8_t	optdata[35] ;
+	u8_t	optlen ;
+	u8_t	code ;
+	u8_t	options[(tnetOPT_MAX_VAL+3)/4] ;
 	union {												// internal flags
 		struct __attribute__((packed)) {
-			uint8_t	TxNow	: 1 ;
-			uint8_t	Running	: 1 ;
-			uint8_t	Spare	: 6 ;
+			u8_t	TxNow	: 1 ;
+			u8_t	Running	: 1 ;
+			u8_t	Spare	: 6 ;
 		} ;
-		uint8_t		flag ;
+		u8_t		flag ;
 	} ;
 } tnet_con_t ;
 
@@ -92,8 +92,8 @@ StackType_t tsbTNET[tnetSTACK_SIZE] = { 0 };
 
 static netx_t	sServTNetCtx = { 0 } ;
 static tnet_con_t	sTerm = { 0 } ;
-static uint8_t		TNetState ;
-static uint8_t		TNetSubSt ;
+static u8_t		TNetState ;
+static u8_t		TNetSubSt ;
 
 // ####################################### private functions #######################################
 
@@ -112,8 +112,8 @@ static void vTelnetDeInit(void) {
 	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "deinit\r\n") ;
 }
 
-static const char * xTelnetFindName(uint8_t opt) {
-	uint8_t idx ;
+static const char * xTelnetFindName(u8_t opt) {
+	u8_t idx ;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
 		if (options.val[idx] == opt) {
 			break;
@@ -127,10 +127,10 @@ static const char * xTelnetFindName(uint8_t opt) {
  * @param option	ECHO ... START_TLS
  * @param code		WILL / WONT / DO / DONT
  */
-static void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
 	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT) && INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS)) ;
-	uint8_t	Xidx = opt / 4 ;							// 2 bits/value, 4 options/byte
-	uint8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
+static void xTelnetSetOption(u8_t opt, u8_t cmd) {
+	u8_t	Xidx = opt / 4 ;							// 2 bits/value, 4 options/byte
+	u8_t	Sidx = (opt % 4) * 2 ;						// positions (0/2/4/6) to shift mask & value left
 	sTerm.options[Xidx]	&=  0x03 << Sidx ;
 	sTerm.options[Xidx]	|= (cmd - tnetWILL) << Sidx ;
 	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), " -> %s\r\n", codename[cmd - tnetWILL]) ;
@@ -141,7 +141,7 @@ static void xTelnetSetOption(uint8_t opt, uint8_t cmd) {
  * @param option	ECHO ... START_TLS
  * @return code		WILL / WONT / DO / DONT
  */
-static uint8_t xTelnetGetOption(uint8_t opt) {
+static u8_t xTelnetGetOption(u8_t opt) {
 	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS));
 	return (sTerm.options[opt/4] >> ((opt % 4) * 2)) & 0x03;
 }
@@ -205,7 +205,7 @@ static void vTelnetSendOption(u8_t opt, u8_t cmd) {
  *	Will TTYPE, NAWS, TSPEED, Remote Flow Control, LMODE, NEWENV
  *	Do Status
  */
-static void vTelnetNegotiate(uint8_t opt, uint8_t cmd) {
+static void vTelnetNegotiate(u8_t opt, u8_t cmd) {
 	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "%02d/%s = %s", opt, xTelnetFindName(opt), codename[cmd-tnetWILL]) ;
 	switch (opt) {
 	case tnetOPT_ECHO:		// Client must not (DONT) and server WILL
