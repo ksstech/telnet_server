@@ -159,7 +159,7 @@ static int xTelnetHandleSGA(void) {
 	int iRV = xTelnetGetOption(tnetOPT_SGA) ;
 	if (iRV == valDONT || iRV == valWONT) {
 		u8_t cGA = tnetGA ;
-		iRV = xNetWrite(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
+		iRV = xNetSend(&sTerm.sCtx, &cGA, sizeof(cGA)) ;
 		if (iRV != sizeof(cGA)) {
 			vTelnetDeInit();
 			return erFAILURE ;
@@ -174,9 +174,9 @@ static int xTelnetHandleSGA(void) {
  * @param o2	Value
  * @return		erSUCCESS or (-) error code or (+) number of bytes (very unlikely)
  */
-static void vTelnetSendOption(uint8_t opt, uint8_t cmd) {
+static void vTelnetSendOption(u8_t opt, u8_t cmd) {
 	u8_t cBuf[3] = { tnetIAC, cmd, opt } ;
-	int iRV = xNetWrite(&sTerm.sCtx, cBuf, sizeof(cBuf)) ;
+	int iRV = xNetSend(&sTerm.sCtx, cBuf, sizeof(cBuf)) ;
 	if (iRV == sizeof(cBuf)) {
 		xTelnetSetOption(opt, cmd) ;
 		vTelnetUpdateStats() ;
@@ -332,7 +332,7 @@ static int xTelnetSetBaseline(void) {
  * @return	number of bytes written or 0 if error
  */
 int xTelnetWriteBlock(u8_t * pBuf, ssize_t Size) {
-	int iRV = xNetWrite(&sTerm.sCtx, pBuf, Size);
+	int iRV = xNetSend(&sTerm.sCtx, pBuf, Size);
 	if (iRV < 0) {
 		xSyslogError(__FUNCTION__, iRV);
 		iRV = 0;
@@ -435,7 +435,7 @@ static void vTnetTask(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
-			iRV = xNetRead(&sTerm.sCtx, (u8_t *) caChr, 1) ;
+			iRV = xNetRecv(&sTerm.sCtx, (u8_t *) caChr, 1) ;
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {	// socket closed or error (excl EAGAIN)
 					iRV = sTerm.sCtx.error ;
@@ -479,7 +479,7 @@ static void vTnetTask(void *pvParameters) {
 
 		case tnetSTATE_RUNNING:
 			// Step 1: read a single character
-			iRV = xNetRead(&sTerm.sCtx, caChr, 1);
+			iRV = xNetRecv(&sTerm.sCtx, caChr, 1);
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
 					TNetState = tnetSTATE_DEINIT;
