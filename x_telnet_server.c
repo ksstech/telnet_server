@@ -518,7 +518,7 @@ void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosClearStateRUN(taskTNET_MASK);
 		xRtosClearStateDELETE(taskTNET_MASK);
-		xRtosTaskCreateStatic(vTnetTask, "TNET", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY) ;
+		xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY) ;
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK) ;
 	}
