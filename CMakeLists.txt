@@ -3,8 +3,12 @@
 set( srcs "x_authenticate.c" "x_telnet_server.c" )
 set( include_dirs "." )
 set( priv_include_dirs )
-set( requires buffers hal_esp32 rtos-support socketsX )
-set( priv_requires commands common printfx syslog )
+set( requires 
+	buffers hal_esp32 rtos-support socketsX 
+)
+set( priv_requires 
+	commands common main printfx syslog 
+)
 
 idf_component_register(
 	SRCS ${srcs} 
