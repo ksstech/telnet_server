@@ -364,11 +364,11 @@ int xTelnetFlushBuf(void * pV, const char * pCC, va_list vaList) {
  * @brief	Main TelNet task
  */
 static void vTnetTask(void *pvParameters) {
-	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK) ;
-	int	iRV = 0 ;
+	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK);
+	int	iRV = 0;
 	u8_t caChr[2];
-	TNetState = tnetSTATE_INIT ;
-	xRtosSetStateRUN(taskTNET_MASK) ;
+	TNetState = tnetSTATE_INIT;
+	xRtosSetStateRUN(taskTNET_MASK);
 
 	while (bRtosVerifyState(taskTNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
@@ -518,9 +518,9 @@ void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosClearStateRUN(taskTNET_MASK);
 		xRtosClearStateDELETE(taskTNET_MASK);
-		xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY) ;
+		xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY);
 	} else {
-		vRtosTaskTerminate(taskTNET_MASK) ;
+		vRtosTaskTerminate(taskTNET_MASK);
 	}
 }
 
