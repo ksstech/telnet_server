@@ -2,10 +2,7 @@
  * x_telnet_server.c - Telnet protocol support
  */
 
-#include <unistd.h>
-#include <errno.h>
-
-#include "hal_variables.h"
+#include "main.h"
 #include "x_telnet_server.h"
 #include "x_authenticate.h"
 
@@ -18,6 +15,9 @@
 #include "hal_stdio.h"
 #include "x_terminal.h"
 #include "x_errors_events.h"
+
+#include <unistd.h>
+#include <errno.h>
 
 /* Documentation links
  * Obsolete:
