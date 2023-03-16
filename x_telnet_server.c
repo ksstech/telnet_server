@@ -364,7 +364,7 @@ int xTelnetFlushBuf(void * pV, const char * pCC, va_list vaList) {
  * @brief	Main TelNet task
  */
 static void vTnetTask(void *pvParameters) {
-	vTaskSetThreadLocalStoragePointer(NULL, 1, (void *)taskTNET_MASK);
+	vTaskSetThreadLocalStoragePointer(NULL, buildFRTLSP_EVT_MASK, (void *)taskTNET_MASK);
 	int	iRV = 0;
 	u8_t caChr[2];
 	TNetState = tnetSTATE_INIT;
