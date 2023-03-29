@@ -2,17 +2,15 @@
  * x_telnet_server.c - Telnet protocol support
  */
 
-#include "main.h"
-#include "x_telnet_server.h"
-#include "x_authenticate.h"
-
-#include "FreeRTOS_Support.h"
-#include "socketsX.h"
+#include "hal_variables.h"			// required by options.h
 
 #include "commands.h"
+#include "FreeRTOS_Support.h"
+#include "hal_stdio.h"
 #include "printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include "syslog.h"
-#include "hal_stdio.h"
+#include "x_authenticate.h"
+#include "x_telnet_server.h"
 #include "x_terminal.h"
 #include "x_errors_events.h"
 
