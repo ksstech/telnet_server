@@ -220,7 +220,6 @@ static void vTelnetNegotiate(u8_t opt, u8_t cmd) {
 
 	#if (buildTERMINAL_CONTROLS_CURSOR == 1)
 	case tnetOPT_NAWS:				// can have functionality
-//AMM	vTelnetSendOption(opt, cmd==tnetWILL ? tnetDO : cmd==tnetWONT ? tnetDONT : cmd==tnetDO ? tnetWILL : tnetWONT);
 		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDO : tnetWILL);
 		break;
 	#endif
