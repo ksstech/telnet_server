@@ -107,7 +107,7 @@ static void vTelnetDeInit(void) {
 	}
 	xRtosClearStatus(flagTNET_SERV);
 	TNetState = tnetSTATE_INIT;
-	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "deinit\r\n");
+	IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit\r\n");
 }
 
 static const char * xTelnetFindName(u8_t opt) {
@@ -384,7 +384,7 @@ static void vTnetTask(void *pvParameters) {
 			break;
 
 		case tnetSTATE_INIT:
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "init\r\n");
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
 			memset(&sServTNetCtx, 0 , sizeof(sServTNetCtx));
 			sServTNetCtx.sa_in.sin_family = AF_INET;
 			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET);
@@ -401,14 +401,14 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetOpen(&sServTNetCtx);			// default blocking state
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT;
-				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "open fail (%d\r\n", sServTNetCtx.error);
+				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] open fail (%d\r\n", sServTNetCtx.error);
 				vTaskDelay(pdMS_TO_TICKS(tnetMS_SOCKET));
 				break;
 			}
 			xRtosSetStatus(flagTNET_SERV);
 			memset(&sTerm, 0, sizeof(tnet_con_t));
 			TNetState = tnetSTATE_WAITING;
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "waiting\r\n");
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
@@ -416,7 +416,7 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					TNetState = tnetSTATE_DEINIT;
-					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept fail (%d)\r\n", sServTNetCtx.error);
+					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] accept fail (%d)\r\n", sServTNetCtx.error);
 				}
 				break;
 			}
@@ -426,14 +426,14 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetMS_SOCKET);
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT;
-				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "rx timeout\r\n");
+				IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] rx timeout\r\n");
 				break;
 			}
 			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "accept ok\r\n");
 			TNetState = tnetSTATE_OPTIONS;			// and start processing options
 			TNetSubSt = tnetSUBST_CHECK;
 			xTelnetSetBaseline();
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "baseline ok\r\n");
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] baseline ok\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
@@ -462,18 +462,18 @@ static void vTnetTask(void *pvParameters) {
 			}
 			TNetState = tnetSTATE_AUTHEN;				// no char, start authenticate
 			TNetSubSt = tnetSUBST_CHECK;
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "options ok\r\n");
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] options ok\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
 			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					TNetState = tnetSTATE_DEINIT;
-					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "authen fail (%d)\r\n", sTerm.sCtx.error);
+					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] authen fail (%d)\r\n", sTerm.sCtx.error);
 				}
 				break;
 			}
-			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "auth ok\r\n");
+			IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
 			// All options and authentication done, empty the buffer to the client
 			xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
 			TNetState = tnetSTATE_RUNNING;
@@ -485,7 +485,7 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error (but not EAGAIN)
 					TNetState = tnetSTATE_DEINIT;
-					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "read fail (%d)\r\n", sTerm.sCtx.error);
+					IF_RP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
 				} else {
 					xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
 				}
