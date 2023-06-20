@@ -372,11 +372,9 @@ static void vTnetTask(void *pvParameters) {
 
 	while (bRtosVerifyState(taskTNET_MASK)) {
 		if (TNetState != tnetSTATE_DEINIT) {
-			EventBits_t CurStat = xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
-			if ((CurStat & flagL3_STA) != flagL3_STA &&
-				(CurStat & flagLX_SAP) != flagLX_SAP) {
+			EventBits_t CurStat = xNetWaitLx(flagL23_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
+			if (!(CurStat & flagL3_STA) && !(CurStat & flagL3_SAP))
 				continue;
-			}
 		}
 		switch(TNetState) {
 		case tnetSTATE_DEINIT:
