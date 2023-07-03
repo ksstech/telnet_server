@@ -368,18 +368,16 @@ static void vTnetTask(void *pvParameters) {
 	int	iRV = 0;
 	u8_t caChr[2];
 	TNetState = tnetSTATE_INIT;
-	xRtosSetStateRUN(taskTNET_MASK);
+	xRtosTaskSetRUN(taskTNET_MASK);
 
-	while (bRtosVerifyState(taskTNET_MASK)) {
+	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
 		if (TNetState != tnetSTATE_DEINIT) {
-			EventBits_t CurStat = xNetWaitLx(flagL23_ANY, pdMS_TO_TICKS(tnetMS_SOCKET));
-			if ((CurStat & (flagL3_STA|flagL3_SAP)) == 0)
+			if (!xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(tnetMS_SOCKET)))
 				continue;
 		}
 		switch(TNetState) {
-		case tnetSTATE_DEINIT:
-			vTelnetDeInit();		// must NOT fall through, IP Lx might have changed
-			break;
+		case tnetSTATE_DEINIT: vTelnetDeInit(); break;
+		// must NOT fall through, IP Lx might have changed
 
 		case tnetSTATE_INIT:
 			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
@@ -514,8 +512,8 @@ static void vTnetTask(void *pvParameters) {
 
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
-		xRtosClearStateRUN(taskTNET_MASK);
-		xRtosClearStateDELETE(taskTNET_MASK);
+		xRtosTaskClearRUN(taskTNET_MASK);
+		xRtosTaskClearDELETE(taskTNET_MASK);
 		xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY);
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK);
@@ -523,11 +521,11 @@ void vTnetStartStop(void) {
 }
 
 void vTnetReport(void) {
-	if (bRtosCheckStatus(flagTNET_SERV) == 1) {
+	if (xRtosGetStatus(flagTNET_SERV)) {
 		xNetReport(&sServTNetCtx, "TNETsrv", 0, 0, 0);
 		P("\tFSM=%d  maxTX=%u  maxRX=%u\r\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx);
 	}
-	if (bRtosCheckStatus(flagTNET_CLNT) == 1) {
+	if (xRtosGetStatus(flagTNET_CLNT)) {
 		xNetReport(&sTerm.sCtx, "TNETclt", 0, 0, 0);
 		#if	(debugTRACK)
 		if (ioB1GET(ioTNETtrack)) {
