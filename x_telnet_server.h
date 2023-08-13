@@ -82,8 +82,8 @@ enum tnetSUBST {
 // ################################### GLOBAL Function Prototypes ##################################
 
 int xTelnetWriteBlock(u8_t * pBuf, ssize_t Size);
-void vTnetStartStop(void) ;
-void vTnetReport(void) ;
+void vTnetStartStop(void);
+void vTnetReport(report_t * psR);
 
 #ifdef __cplusplus
 }
