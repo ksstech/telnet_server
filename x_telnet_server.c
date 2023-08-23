@@ -417,6 +417,7 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			xRtosSetStatus(flagTNET_CLNT);
+			SL_WARN("Connection from %#-I:%hd accepted", sTerm.sCtx.sa_in.sin_addr.s_addr, sTerm.sCtx.sa_in.sin_port);
 
 			// setup timeout for processing options
 			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetMS_SOCKET);
