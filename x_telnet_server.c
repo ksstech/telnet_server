@@ -36,8 +36,6 @@
 
 // ####################################### Macros ##################################################
 
-#define	tnetSTACK_SIZE				(configMINIMAL_STACK_SIZE + 2048 + (flagSTACK * 256))
-
 #define	tnetMS_SOCKET				500
 #define	tnetMS_READ_WRITE			70
 
@@ -515,7 +513,7 @@ void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosTaskClearRUN(taskTNET_MASK);
 		xRtosTaskClearDELETE(taskTNET_MASK);
-		xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, 3, tsbTNET, &ttsTNET, tskNO_AFFINITY);
+		xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, tnetPRIORITY, tsbTNET, &ttsTNET, tskNO_AFFINITY);
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK);
 	}
