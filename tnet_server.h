@@ -84,7 +84,9 @@ extern TaskHandle_t TnetHandle;
 
 int xTelnetWriteBlock(u8_t * pBuf, ssize_t Size);
 void vTnetStartStop(void);
-void vTnetReport(report_t * psR);
+
+struct report_t;
+void vTnetReport(struct report_t * psR);
 
 #ifdef __cplusplus
 }
