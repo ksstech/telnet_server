@@ -1,5 +1,5 @@
 /*
- * x_telnet_server.h
+ * tnet_server.h
  */
 
 #pragma once
@@ -78,6 +78,7 @@ enum tnetSUBST {
 
 // ######################################## global variables #######################################
 
+extern TaskHandle_t TnetHandle;
 
 // ################################### GLOBAL Function Prototypes ##################################
 

@@ -1,10 +1,9 @@
 /*
- * x_authenticate.c
- * Copyright (c) 2017-22 Andre M. Maree / KSS Technologies (Pty) Ltd.
+ * tnet_auth.c -Copyright (c) 2017-23 Andre M. Maree / KSS Technologies (Pty) Ltd.
  */
 
 #include "FreeRTOS_Support.h"
-#include "x_authenticate.h"
+#include "tnet_auth.h"
 #include "x_errors_events.h"
 #include "socketsX.h"
 #include "printfx.h"									// +x_definitions +stdarg +stdint +stdio

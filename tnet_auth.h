@@ -1,5 +1,5 @@
 /*
- * x_authenticate.h
+ * tnet_auth.h
  */
 
 #pragma	once
@@ -28,7 +28,7 @@ extern "C" {
 
 // ################################### Public/global functions #####################################
 
-int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) ;
+int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho);
 
 #ifdef __cplusplus
 }
