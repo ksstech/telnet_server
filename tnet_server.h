@@ -78,7 +78,6 @@ enum tnetSUBST {
 
 // ######################################## global variables #######################################
 
-extern TaskHandle_t TnetHandle;
 
 // ################################### GLOBAL Function Prototypes ##################################
 
