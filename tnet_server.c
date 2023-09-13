@@ -37,7 +37,7 @@
 
 // ####################################### Macros ##################################################
 
-#define	tnetMS_SOCKET				500
+#define	tnetINTERVAL_MS				100
 #define	tnetMS_READ_WRITE			70
 
 #define	tnetAUTHENTICATE			0
@@ -346,9 +346,10 @@ static void vTnetTask(void *pvParameters) {
 	xRtosTaskSetRUN(taskTNET_MASK);
 
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
-		if (TNetState != tnetSTATE_DEINIT) {
-			if (!xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(tnetMS_SOCKET))) continue;
-		}
+		if ((TNetState != tnetSTATE_DEINIT) &&
+			(xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(100)) == 0))
+			continue;
+
 		#if (includeHTTP_TASK == 0) && (includeTNET_TASK > 0)
 		#include "x_http_client.h"
 		vHttpRequestNotifyHandler(); 		// Handle HTTP client type requests from other tasks
@@ -376,7 +377,7 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV < erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT;
 				IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] open fail (%d\r\n", sServTNetCtx.error);
-				vTaskDelay(pdMS_TO_TICKS(tnetMS_SOCKET));
+				vTaskDelay(pdMS_TO_TICKS(tnetINTERVAL_MS));
 				break;
 			}
 			xRtosSetStatus(flagTNET_SERV);
@@ -386,7 +387,7 @@ static void vTnetTask(void *pvParameters) {
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
-			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, pdMS_TO_TICKS(tnetMS_SOCKET));
+			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetINTERVAL_MS);
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					TNetState = tnetSTATE_DEINIT;
@@ -398,7 +399,7 @@ static void vTnetTask(void *pvParameters) {
 			SL_WARN("Connection from %#-I:%hd accepted", sTerm.sCtx.sa_in.sin_addr.s_addr, sTerm.sCtx.sa_in.sin_port);
 
 			// setup timeout for processing options
-			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetMS_SOCKET);
+			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetINTERVAL_MS);
 			if (iRV != erSUCCESS) {
 				TNetState = tnetSTATE_DEINIT;
 				IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] rx timeout\r\n");
