@@ -2,7 +2,8 @@
  * tnet_server.c - Telnet protocol support
  */
 
-#include "hal_variables.h"			// required by options.h
+#include "hal_config.h"
+#include "hal_options.h"
 
 #include "commands.h"
 #include "FreeRTOS_Support.h"
@@ -344,7 +345,6 @@ static void vTnetTask(void *pvParameters) {
 	u8_t caChr[2];
 	TNetState = tnetSTATE_INIT;
 	xRtosTaskSetRUN(taskTNET_MASK);
-
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
 		if ((TNetState != tnetSTATE_DEINIT) &&
 			(xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(100)) == 0))
