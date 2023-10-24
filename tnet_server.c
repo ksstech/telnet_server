@@ -495,11 +495,11 @@ void vTnetStartStop(void) {
 }
 
 void vTnetReport(report_t * psR) {
-	if (xRtosGetStatus(flagTNET_SERV)) {
+	if (xRtosCheckStatus(flagTNET_SERV)) {
 		xNetReport(psR, &sServTNetCtx, "TNETsrv", 0, 0, 0);
 		wprintfx(psR, "\tFSM=%d  maxTX=%u  maxRX=%u\r\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx);
 	}
-	if (xRtosGetStatus(flagTNET_CLNT)) {
+	if (xRtosCheckStatus(flagTNET_CLNT)) {
 		xNetReport(psR, &sTerm.sCtx, "TNETclt", 0, 0, 0);
 		#if	(debugTRACK)
 		if (ioB1GET(ioTNETtrack)) {
