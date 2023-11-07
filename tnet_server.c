@@ -344,7 +344,7 @@ static void vTnetTask(void *pvParameters) {
 	int	iRV = 0;
 	u8_t caChr[2];
 	TNetState = tnetSTATE_INIT;
-	xRtosTaskSetRUN(taskTNET_MASK);
+	xRtosSetTaskRUN(taskTNET_MASK);
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
 		if ((TNetState != tnetSTATE_DEINIT) &&
 			(xNetWaitLx(flagLX_ANY, pdMS_TO_TICKS(100)) == 0))
@@ -486,8 +486,8 @@ static void vTnetTask(void *pvParameters) {
 
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
-		xRtosTaskClearRUN(taskTNET_MASK);
-		xRtosTaskClearDELETE(taskTNET_MASK);
+		xRtosClearTaskRUN(taskTNET_MASK);
+		xRtosClearTaskDELETE(taskTNET_MASK);
 		TnetHandle = xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, tnetPRIORITY, tsbTNET, &ttsTNET, tskNO_AFFINITY);
 	} else {
 		vRtosTaskTerminate(taskTNET_MASK);
