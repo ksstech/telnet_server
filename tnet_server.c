@@ -4,6 +4,7 @@
 
 #include "hal_config.h"
 #include "hal_options.h"
+#include "hal_rtc.h"				// for RTC var structure
 
 #include "commands.h"
 #include "FreeRTOS_Support.h"
@@ -16,7 +17,6 @@
 #include "x_terminal.h"
 #include "x_errors_events.h"
 
-#include <unistd.h>
 #include <errno.h>
 
 /* Documentation links
