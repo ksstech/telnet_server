@@ -1,6 +1,4 @@
-/*
- * tnet_auth.c -Copyright (c) 2017-24 Andre M. Maree / KSS Technologies (Pty) Ltd.
- */
+// tnet_auth.c -Copyright (c) 2017-24 Andre M. Maree / KSS Technologies (Pty) Ltd.
 
 #include "FreeRTOS_Support.h"
 #include "tnet_auth.h"
