@@ -3,8 +3,8 @@
 set( srcs "tnet_auth.c" "tnet_server.c" )
 set( include_dirs "." )
 set( priv_include_dirs )
-set( requires "buffers socketsX" )
-set( priv_requires "commands printfx syslog systiming" )
+set( requires "main" )
+set( priv_requires )
 
 idf_component_register(
 	SRCS ${srcs}
