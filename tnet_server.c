@@ -466,7 +466,7 @@ static void vTnetTask(void *pvParameters) {
 			// Step 2: check if not part of Telnet negotiation
 			if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
 			// Step 3: Ensure UARTx marked inactive
-			clrSYSFLAGS(sfU0ACTIVE << configSTDIO_UART_CHAN);
+			if (configCONSOLE_UART >= 0) clrSYSFLAGS(sfU0ACTIVE << configCONSOLE_UART);
 			// Step 4: Handle special (non-Telnet) characters
 			if (caChr[0] == CHR_GS) {						// cntl + ']'
 				TNetState = tnetSTATE_DEINIT;
