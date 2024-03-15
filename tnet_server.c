@@ -2,7 +2,7 @@
  * tnet_server.c - Telnet protocol support
  */
 
-#include "hal_config.h"
+#include "hal_platform.h"
 #include "hal_options.h"
 #include "hal_rtc.h"				// for RTC var structure
 
