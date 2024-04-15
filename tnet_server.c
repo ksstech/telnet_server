@@ -262,10 +262,8 @@ static int xTelnetParseChar(int cChr) {
 		SubState = tnetSUBST_CHECK;
 		break;
 	case tnetSUBST_OPTDAT:
-		} else if (sTerm.optlen < sizeof(sTerm.optdata)) {
-			sTerm.optdata[sTerm.optlen++] = cChr;
-		}
 		if (cChr == tnetIAC) SubState = tnetSUBST_SE;
+		else if (sTerm.optlen < sizeof(sTerm.optdata)) sTerm.optdata[sTerm.optlen++] = cChr;
 		break;
 	case tnetSUBST_SE:
 		if (cChr == tnetSE) {
