@@ -441,7 +441,9 @@ static void vTnetTask(void *pvParameters) {
 			}
 			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
 			// All options and authentication done, empty the buffer to the client
-			xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
+			if (buildSTDOUT_LEVEL > 0) xStdioBufLock(portMAX_DELAY);
+			xTelnetFlushBuf(NULL);
+			if (buildSTDOUT_LEVEL > 0) xStdioBufUnLock();
 			State = tnetSTATE_RUNNING;
 			/* FALLTHRU */ /* no break */
 
@@ -453,7 +455,9 @@ static void vTnetTask(void *pvParameters) {
 					State = tnetSTATE_DEINIT;
 					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
 				} else {
-					xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
+					if (buildSTDOUT_LEVEL > 0) xStdioBufLock(portMAX_DELAY);
+					xTelnetFlushBuf(NULL);
+					if (buildSTDOUT_LEVEL > 0) xStdioBufUnLock();
 				}
 				break;
 			}
@@ -468,7 +472,11 @@ static void vTnetTask(void *pvParameters) {
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
 			caChr[1] = 0;
-			xCommandProcessString((char *) caChr, 1, xTelnetFlushBuf, NULL, NULL);
+			command_t sCmd =  { 0 };
+			sCmd.pCmd = caChr;
+			sCmd.Hdlr = xTelnetFlushBuf;
+			sCmd.fEcho = 1;
+			xCommandProcess(&sCmd);
 			break;
 
 		default:
