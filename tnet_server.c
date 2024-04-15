@@ -324,7 +324,7 @@ int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
  * @return	non-zero positive value if nothing to send or all successfully sent
  *			0 (if socket closed) or other negative error code
  */
-int xTelnetFlushBuf(void * pV, const char * pCC, va_list vaList) {
+int xTelnetFlushBuf(void *pV) {
 	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
 	if (iRV > 0) xTelnetHandleSGA();
 	if (iRV < erSUCCESS) State = tnetSTATE_DEINIT;
