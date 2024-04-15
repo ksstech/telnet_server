@@ -86,9 +86,9 @@ TaskHandle_t TnetHandle;
 StaticTask_t ttsTNET = {0};
 StackType_t tsbTNET[tnetSTACK_SIZE] = {0};
 
-static u8_t TNetState, TNetSubSt;
 static netx_t sServTNetCtx = {0};
 static tnet_con_t sTerm = {0};
+static u8_t State, SubState;
 
 // ####################################### private functions #######################################
 
@@ -236,31 +236,30 @@ static void vTelnetUpdateOption(void) {
 }
 
 static int xTelnetParseChar(int cChr) {
-	switch (TNetSubSt) {
+	switch (SubState) {
 	case tnetSUBST_CHECK:
-		if (cChr == tnetIAC) {
-			TNetSubSt = tnetSUBST_IAC;
+		if (cChr == tnetIAC) SubState = tnetSUBST_IAC;
 		else if (cChr != tnetGA) return cChr; // RETURN the character
 		break;
 	case tnetSUBST_IAC:
 		switch (cChr) {
-		case tnetSB: TNetSubSt = tnetSUBST_SB; break;
+		case tnetSB: SubState = tnetSUBST_SB; break;
 		case tnetWILL:
 		case tnetWONT:
 		case tnetDO:
-		case tnetDONT: sTerm.code = cChr; TNetSubSt = tnetSUBST_OPT; break;
-		case tnetIAC: TNetSubSt = tnetSUBST_CHECK; return cChr;	// RETURN 2nd IAC
-		default: TNetSubSt = tnetSUBST_CHECK;
+		case tnetDONT: sTerm.code = cChr; SubState = tnetSUBST_OPT; break;
+		case tnetIAC: SubState = tnetSUBST_CHECK; return cChr; // RETURN 2nd IAC
+		default: SubState = tnetSUBST_CHECK;
 		}
 		break;
 	case tnetSUBST_SB: // option ie NAWS, SPEED, TYPE etc
 		sTerm.code = cChr;
 		sTerm.optlen = 0;
-		TNetSubSt = tnetSUBST_OPTDAT;
+		SubState = tnetSUBST_OPTDAT;
 		break;
 	case tnetSUBST_OPT:
 		vTelnetNegotiate(cChr, sTerm.code);
-		TNetSubSt = tnetSUBST_CHECK;
+		SubState = tnetSUBST_CHECK;
 		break;
 	case tnetSUBST_OPTDAT:
 		} else if (sTerm.optlen < sizeof(sTerm.optdata)) {
@@ -271,7 +270,7 @@ static int xTelnetParseChar(int cChr) {
 	case tnetSUBST_SE:
 		if (cChr == tnetSE) {
 			vTelnetUpdateOption();
-			TNetSubSt = tnetSUBST_CHECK;
+			SubState = tnetSUBST_CHECK;
 			break;
 		}
 		/* FALLTHRU */ /* no break */
@@ -341,7 +340,7 @@ static void vTnetTask(void *pvParameters) {
 	vTaskSetThreadLocalStoragePointer(NULL, buildFRTLSP_EVT_MASK, (void *)taskTNET_MASK);
 	int iRV = 0;
 	u8_t caChr[2];
-	TNetState = tnetSTATE_INIT;
+	State = tnetSTATE_INIT;
 	xRtosSetTaskRUN(taskTNET_MASK);
 
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
@@ -351,8 +350,8 @@ static void vTnetTask(void *pvParameters) {
 		#include "x_http_client.h"
 		vHttpRequestNotifyHandler(); // Handle HTTP client type requests from other tasks
 		#endif
-		switch(TNetState) {
 
+		switch (State) {
 		case tnetSTATE_DEINIT: vTelnetDeInit(); break;	// must NOT fall through, IP Lx might have changed
 
 		case tnetSTATE_INIT:
@@ -372,14 +371,14 @@ static void vTnetTask(void *pvParameters) {
 			#endif
 			iRV = xNetOpen(&sServTNetCtx); 				// default blocking state
 			if (iRV < erSUCCESS) {
-				TNetState = tnetSTATE_DEINIT;
+				State = tnetSTATE_DEINIT;
 				IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] open fail (%d\r\n", sServTNetCtx.error);
 				vTaskDelay(pdMS_TO_TICKS(tnetINTERVAL_MS));
 				break;
 			}
 			xRtosSetStatus(flagTNET_SERV);
 			memset(&sTerm, 0, sizeof(tnet_con_t));
-			TNetState = tnetSTATE_WAITING;
+			State = tnetSTATE_WAITING;
 			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting\r\n");
 			/* FALLTHRU */ /* no break */
 
@@ -387,7 +386,7 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetINTERVAL_MS);
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
-					TNetState = tnetSTATE_DEINIT;
+					State = tnetSTATE_DEINIT;
 					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] accept fail (%d)\r\n", sServTNetCtx.error);
 				}
 				break;
@@ -397,7 +396,7 @@ static void vTnetTask(void *pvParameters) {
 
 			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetINTERVAL_MS);	// setup timeout for processing options
 			if (iRV != erSUCCESS) {
-				TNetState = tnetSTATE_DEINIT;
+				State = tnetSTATE_DEINIT;
 				IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] rx timeout\r\n");
 				break;
 			}
@@ -413,30 +412,30 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV != 1){
 				if (sTerm.sCtx.error != EAGAIN) { // socket closed or error (excl EAGAIN)
 					iRV = sTerm.sCtx.error;
-					TNetState = tnetSTATE_DEINIT;
+					State = tnetSTATE_DEINIT;
 					break;
 				}
 				/* EAGAIN so unless completed OPTIONS phase (tnetSUBST_CHECK) try again */
-				if (TNetSubSt != tnetSUBST_CHECK) break;
+				if (SubState != tnetSUBST_CHECK) break;
 			} else {
 				if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
 				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
-				IF_myASSERT(debugTRACK && TNetSubSt != tnetSUBST_CHECK, 0);
+				IF_myASSERT(debugTRACK && SubState != tnetSUBST_CHECK, 0);
 			}
 			// setup timeout for processing normal comms
 			if ((iRV = xNetSetRecvTO(&sTerm.sCtx, tnetMS_READ_WRITE)) != erSUCCESS) {
 				State = tnetSTATE_DEINIT;
 				break;
 			}
-			TNetState = tnetSTATE_AUTHEN;				// no char, start authenticate
-			TNetSubSt = tnetSUBST_CHECK;
+			State = tnetSTATE_AUTHEN; // no char, start authenticate
+			SubState = tnetSUBST_CHECK;
 			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] options ok\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
 			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
-					TNetState = tnetSTATE_DEINIT;
+					State = tnetSTATE_DEINIT;
 					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] authen fail (%d)\r\n", sTerm.sCtx.error);
 				}
 				break;
@@ -444,15 +443,15 @@ static void vTnetTask(void *pvParameters) {
 			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
 			// All options and authentication done, empty the buffer to the client
 			xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
-			TNetState = tnetSTATE_RUNNING;
+			State = tnetSTATE_RUNNING;
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_RUNNING:
 			// Step 1: read a single character
 			iRV = xNetRecv(&sTerm.sCtx, caChr, 1);
 			if (iRV != 1) {
-					TNetState = tnetSTATE_DEINIT;
 				if (sTerm.sCtx.error != EAGAIN) { // socket closed or error (but not EAGAIN)
+					State = tnetSTATE_DEINIT;
 					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
 				} else {
 					xCommandProcessString("\0", 0, xTelnetFlushBuf, NULL, NULL);
@@ -464,8 +463,8 @@ static void vTnetTask(void *pvParameters) {
 			// Step 3: Ensure UARTx marked inactive
 			if (configCONSOLE_UART >= 0) clrSYSFLAGS(sfUXACTIVE);
 			// Step 4: Handle special (non-Telnet) characters
-				TNetState = tnetSTATE_DEINIT;
 			if (caChr[0] == CHR_GS) { // cntl + ']'
+				State = tnetSTATE_DEINIT;
 				break;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
@@ -494,7 +493,7 @@ void vTnetStartStop(void) {
 void vTnetReport(report_t *psR) {
 	if (xRtosCheckStatus(flagTNET_SERV)) {
 		xNetReport(psR, &sServTNetCtx, "TNETsrv", 0, 0, 0);
-		wprintfx(psR, "\tFSM=%d  maxTX=%u  maxRX=%u\r\n", TNetState, sServTNetCtx.maxTx, sServTNetCtx.maxRx);
+		wprintfx(psR, "\tFSM=%d  maxTX=%u  maxRX=%u\r\n", State, sServTNetCtx.maxTx, sServTNetCtx.maxRx);
 	}
 	if (xRtosCheckStatus(flagTNET_CLNT)) {
 		xNetReport(psR, &sTerm.sCtx, "TNETclt", 0, 0, 0);
