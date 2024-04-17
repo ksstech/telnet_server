@@ -473,7 +473,7 @@ static void vTnetTask(void *pvParameters) {
 			command_t sCmd =  { 0 };
 			sCmd.pCmd = caChr;
 			sCmd.Hdlr = xTelnetFlushBuf;
-			sCmd.fEcho = 1;
+			sCmd.sRprt.fEcho = 1;
 			xCommandProcess(&sCmd);
 			break;
 
