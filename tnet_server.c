@@ -221,7 +221,7 @@ static void vTelnetUpdateOption(void) {
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
 			#if (includeTERMINAL_CONTROLS == 1) // NOT TESTED, check against RFC
-			vTerminalSetSize(ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
+			vTermSetSize(ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
 			SL_INFO("Applied NAWS C=%d R=%d", ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
 			#else
 			SL_NOT("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
@@ -514,7 +514,7 @@ void vTnetReport(report_t *psR) {
 		#endif
 		#if (includeTERMINAL_CONTROLS == 1)
 		terminfo_t TermInfo;
-		vTerminalGetInfo(&TermInfo);
+		vTermGetInfo(&TermInfo);
 		wprintfx(psR, "%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\r\n", colourFG_CYAN,
 				 attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
 		#endif
