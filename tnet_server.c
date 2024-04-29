@@ -441,9 +441,11 @@ static void vTnetTask(void *pvParameters) {
 			}
 			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
 			// All options and authentication done, empty the buffer to the client
-			if (buildSTDOUT_LEVEL > 0) xStdioBufLock(portMAX_DELAY);
-			xTelnetFlushBuf(NULL);
-			if (buildSTDOUT_LEVEL > 0) xStdioBufUnLock();
+			#if (buildSTDOUT_LEVEL > 0)
+				xStdioBufLock(portMAX_DELAY);
+				xTelnetFlushBuf(NULL);
+				xStdioBufUnLock();
+			#endif
 			State = tnetSTATE_RUNNING;
 			/* FALLTHRU */ /* no break */
 
@@ -455,9 +457,11 @@ static void vTnetTask(void *pvParameters) {
 					State = tnetSTATE_DEINIT;
 					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
 				} else {
-					if (buildSTDOUT_LEVEL > 0) xStdioBufLock(portMAX_DELAY);
+				#if (buildSTDOUT_LEVEL > 0)
+					xStdioBufLock(portMAX_DELAY);
 					xTelnetFlushBuf(NULL);
-					if (buildSTDOUT_LEVEL > 0) xStdioBufUnLock();
+					xStdioBufUnLock();
+				#endif
 				}
 				break;
 			}
