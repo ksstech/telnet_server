@@ -326,8 +326,10 @@ int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
  */
 int xTelnetFlushBuf(void *pV) {
 	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
-	if (iRV > 0) xTelnetHandleSGA();
-	if (iRV < erSUCCESS) State = tnetSTATE_DEINIT;
+	if (iRV > 0)
+		xTelnetHandleSGA();
+	if (iRV < erSUCCESS)
+		State = tnetSTATE_DEINIT;
 	return (iRV < erSUCCESS) ? iRV : erSUCCESS;
 }
 
@@ -460,9 +462,11 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			// Step 2: check if not part of Telnet negotiation
-			if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
+			if (xTelnetParseChar(caChr[0]) == erSUCCESS)
+				break;
 			// Step 3: Ensure UARTx marked inactive
-			if (configCONSOLE_UART >= 0) clrSYSFLAGS(sfUXACTIVE);
+			if (configCONSOLE_UART >= 0)
+				clrSYSFLAGS(sfUXACTIVE);
 			// Step 4: Handle special (non-Telnet) characters
 			if (caChr[0] == CHR_GS) { // cntl + ']'
 				State = tnetSTATE_DEINIT;
