@@ -100,7 +100,7 @@ static void vTelnetDeInit(void) {
 	if (sServTNetCtx.sd > 0) xNetClose(&sServTNetCtx);
 	xRtosClearStatus(flagTNET_SERV);
 	State = tnetSTATE_INIT;
-	IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit\r\n");
+	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit\r\n");
 }
 
 static const char *xTelnetFindName(u8_t opt) {
@@ -117,7 +117,7 @@ static const char *xTelnetFindName(u8_t opt) {
  * @param code		WILL / WONT / DO / DONT
  */
 static void xTelnetSetOption(u8_t opt, u8_t cmd) {
-	IF_P(debugTRACK && ioB1GET(ioTNETtrack), "o=%d  c=%d", opt, cmd);
+	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "o=%d  c=%d", opt, cmd);
 	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT));
 	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS));
 	u8_t Xidx = opt / 4;	   // 2 bits/value, 4 options/byte
@@ -355,7 +355,7 @@ static void vTnetTask(void *pvParameters) {
 		case tnetSTATE_DEINIT: vTelnetDeInit(); break;	// must NOT fall through, IP Lx might have changed
 
 		case tnetSTATE_INIT:
-			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
 			memset(&sServTNetCtx, 0, sizeof(sServTNetCtx));
 			sServTNetCtx.sa_in.sin_family = AF_INET;
 			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET);
@@ -372,14 +372,14 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetOpen(&sServTNetCtx); 				// default blocking state
 			if (iRV < erSUCCESS) {
 				State = tnetSTATE_DEINIT;
-				IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] open fail (%d\r\n", sServTNetCtx.error);
+				IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] open fail (%d\r\n", sServTNetCtx.error);
 				vTaskDelay(pdMS_TO_TICKS(tnetINTERVAL_MS));
 				break;
 			}
 			xRtosSetStatus(flagTNET_SERV);
 			memset(&sTerm, 0, sizeof(tnet_con_t));
 			State = tnetSTATE_WAITING;
-			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting\r\n");
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
@@ -387,7 +387,7 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					State = tnetSTATE_DEINIT;
-					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] accept fail (%d)\r\n", sServTNetCtx.error);
+					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] accept fail (%d)\r\n", sServTNetCtx.error);
 				}
 				break;
 			}
@@ -396,14 +396,14 @@ static void vTnetTask(void *pvParameters) {
 			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetINTERVAL_MS);	// setup timeout for processing options
 			if (iRV != erSUCCESS) {
 				State = tnetSTATE_DEINIT;
-				IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] rx timeout\r\n");
+				IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] rx timeout\r\n");
 				break;
 			}
-			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "accept ok\r\n");
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "accept ok\r\n");
 			State = tnetSTATE_OPTIONS; // and start processing options
 			SubState = tnetSUBST_CHECK;
 			xTelnetSetBaseline();
-			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] baseline ok\r\n");
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] baseline ok\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
@@ -428,18 +428,18 @@ static void vTnetTask(void *pvParameters) {
 			}
 			State = tnetSTATE_AUTHEN; // no char, start authenticate
 			SubState = tnetSUBST_CHECK;
-			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] options ok\r\n");
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] options ok\r\n");
 			/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
 			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					State = tnetSTATE_DEINIT;
-					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] authen fail (%d)\r\n", sTerm.sCtx.error);
+					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] authen fail (%d)\r\n", sTerm.sCtx.error);
 				}
 				break;
 			}
-			IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
 			// All options and authentication done, empty the buffer to the client
 			#if (buildSTDOUT_LEVEL > 0)
 				xStdioBufLock(portMAX_DELAY);
@@ -455,7 +455,7 @@ static void vTnetTask(void *pvParameters) {
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) { // socket closed or error (but not EAGAIN)
 					State = tnetSTATE_DEINIT;
-					IF_CP(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
+					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
 				} else {
 				#if (buildSTDOUT_LEVEL > 0)
 					xStdioBufLock(portMAX_DELAY);
@@ -481,7 +481,7 @@ static void vTnetTask(void *pvParameters) {
 			command_t sCmd =  { 0 };
 			sCmd.pCmd = caChr;
 			sCmd.Hdlr = xTelnetFlushBuf;
-			sCmd.sRprt.sgr = sgrANSI;
+			sCmd.sRprt.uSGR = sgrANSI;
 			sCmd.sRprt.fEcho = 1;
 			xCommandProcess(&sCmd);
 			break;
@@ -513,9 +513,10 @@ void vTnetReport(report_t *psR) {
 		xNetReport(psR, &sTerm.sCtx, "TNETclt", 0, 0, 0);
 		#if (debugTRACK)
 		if (ioB1GET(ioTNETtrack)) {
-			wprintfx(psR, "%CTNETxxx%C\t", colourFG_CYAN, attrRESET);
+			wprintfx(psR, "%CTNETxxx%C\t", xpfSGR(0,0,colourFG_CYAN,0), xpfSGR(0,0,attrRESET,0));
 			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
-				if (idx == 17 || idx == 33) wprintfx(psR, "\r\n\t");
+				if (idx == 17 || idx == 33)
+					wprintfx(psR, "\r\n\t");
 				wprintfx(psR, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]);
 			}
 			wprintfx(psR, strCRLF);
@@ -524,8 +525,8 @@ void vTnetReport(report_t *psR) {
 		#if (includeTERMINAL_CONTROLS == 1)
 		terminfo_t TermInfo;
 		vTermGetInfo(&TermInfo);
-		wprintfx(psR, "%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\r\n", colourFG_CYAN,
-				 attrRESET, TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
+		wprintfx(psR, "%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\r\n", xpfSGR(0,0,colourFG_CYAN,0),
+				 xpfSGR(0,0,attrRESET,0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
 		#endif
 	}
 }
