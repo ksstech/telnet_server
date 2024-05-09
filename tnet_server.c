@@ -93,11 +93,13 @@ static u8_t State, SubState;
 // ####################################### private functions #######################################
 
 static void vTelnetDeInit(void) {
-	if (sTerm.sCtx.sd > 0) xNetClose(&sTerm.sCtx);
+	if (sTerm.sCtx.sd > 0)
+		xNetClose(&sTerm.sCtx);
 	xRtosClearStatus(flagTNET_CLNT);
 	sTerm.Running = 0;
 
-	if (sServTNetCtx.sd > 0) xNetClose(&sServTNetCtx);
+	if (sServTNetCtx.sd > 0)
+		xNetClose(&sServTNetCtx);
 	xRtosClearStatus(flagTNET_SERV);
 	State = tnetSTATE_INIT;
 	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit\r\n");
@@ -106,7 +108,9 @@ static void vTelnetDeInit(void) {
 static const char *xTelnetFindName(u8_t opt) {
 	u8_t idx;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
-		if (options.val[idx] == opt) break;
+		if (options.val[idx] == opt) {
+			break;
+		}
 	}
 	return options.name[idx];
 }
@@ -140,8 +144,10 @@ static u8_t xTelnetGetOption(u8_t opt) {
 }
 
 static void vTelnetUpdateStats(void) {
-	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
-	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx) sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
+	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx)
+		sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
+	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx)
+		sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
 }
 
 static int xTelnetHandleSGA(void) {
