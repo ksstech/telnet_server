@@ -1,6 +1,4 @@
-/*
- * tnet_auth.h
- */
+// tnet_auth.h
 
 #pragma	once
 

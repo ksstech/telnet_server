@@ -351,15 +351,18 @@ static void vTnetTask(void *pvParameters) {
 	xRtosSetTaskRUN(taskTNET_MASK);
 
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
-		if (State != tnetSTATE_DEINIT && !xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT))) continue;
+		if (State != tnetSTATE_DEINIT && !xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)))
+			continue;
 
 		#if (includeHTTP_TASK == 0) && (includeTNET_TASK > 0)
-		#include "x_http_client.h"
-		vHttpRequestNotifyHandler(); // Handle HTTP client type requests from other tasks
+			#include "x_http_client.h"
+			vHttpRequestNotifyHandler(); // Handle HTTP client type requests from other tasks
 		#endif
 
 		switch (State) {
-		case tnetSTATE_DEINIT: vTelnetDeInit(); break;	// must NOT fall through, IP Lx might have changed
+		case tnetSTATE_DEINIT:
+			vTelnetDeInit();
+			break;					// must NOT fall through, IP Lx might have changed
 
 		case tnetSTATE_INIT:
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
