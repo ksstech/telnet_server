@@ -4,6 +4,7 @@
 #include "hal_options.h"
 #include "hal_rtc.h"
 
+#include "certificates.h"
 #include "commands.h"
 #include "FreeRTOS_Support.h"
 #include "hal_stdio.h"
