@@ -354,11 +354,6 @@ static void vTnetTask(void *pvParameters) {
 		if (State != tnetSTATE_DEINIT && !xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)))
 			continue;
 
-		#if (includeHTTP_TASK == 0) && (includeTNET_TASK > 0)
-			#include "x_http_client.h"
-			vHttpRequestNotifyHandler(); // Handle HTTP client type requests from other tasks
-		#endif
-
 		switch (State) {
 		case tnetSTATE_DEINIT:
 			vTelnetDeInit();
