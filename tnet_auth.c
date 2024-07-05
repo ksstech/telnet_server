@@ -52,7 +52,7 @@ int	xReadString(int sd, char * pcBuf, size_t Size, bool bEcho) {
 		vTaskDelay(50);
 	}
 	if (cChr == CHR_CR)
-		write(sd, strCRLF, 2);
+		write(sd, strNL, strlen(strNUL));
 	return Idx;
 }
 
