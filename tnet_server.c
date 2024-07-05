@@ -524,7 +524,7 @@ void vTnetReport(report_t *psR) {
 					wprintfx(psR, "\r\n\t");
 				wprintfx(psR, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]);
 			}
-			wprintfx(psR, strCRLF);
+			wprintfx(psR, strNL);
 		}
 		#endif
 		#if (includeTERMINAL_CONTROLS == 1)
