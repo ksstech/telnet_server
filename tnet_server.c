@@ -353,8 +353,9 @@ static void vTnetTask(void *pvParameters) {
 	xRtosSetTaskRUN(taskTNET_MASK);
 
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
-		if (State != tnetSTATE_DEINIT && !xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)))
+		if (State != tnetSTATE_DEINIT && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) {
 			continue;
+		}
 
 		switch (State) {
 		case tnetSTATE_DEINIT:
@@ -362,7 +363,7 @@ static void vTnetTask(void *pvParameters) {
 			break;					// must NOT fall through, IP Lx might have changed
 
 		case tnetSTATE_INIT:
-			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
+		{	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init\r\n");
 			memset(&sServTNetCtx, 0, sizeof(sServTNetCtx));
 			sServTNetCtx.sa_in.sin_family = AF_INET;
 			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET);
@@ -387,10 +388,10 @@ static void vTnetTask(void *pvParameters) {
 			memset(&sTerm, 0, sizeof(tnet_con_t));
 			State = tnetSTATE_WAITING;
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting\r\n");
-			/* FALLTHRU */ /* no break */
+		}	/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_WAITING:
-			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetINTERVAL_MS);
+		{	iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetINTERVAL_MS);
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					State = tnetSTATE_DEINIT;
@@ -411,20 +412,24 @@ static void vTnetTask(void *pvParameters) {
 			SubState = tnetSUBST_CHECK;
 			xTelnetSetBaseline();
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] baseline ok\r\n");
-			/* FALLTHRU */ /* no break */
+		}	/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_OPTIONS:
-			iRV = xNetRecv(&sTerm.sCtx, (u8_t *)caChr, 1);
-			if (iRV != 1){
+		{	iRV = xNetRecv(&sTerm.sCtx, (u8_t *)caChr, 1);
+			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) { // socket closed or error (excl EAGAIN)
 					iRV = sTerm.sCtx.error;
 					State = tnetSTATE_DEINIT;
 					break;
 				}
 				/* EAGAIN so unless completed OPTIONS phase (tnetSUBST_CHECK) try again */
-				if (SubState != tnetSUBST_CHECK) break;
+				if (SubState != tnetSUBST_CHECK) {
+					break;
+				}
 			} else {
-				if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
+				if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
+					break;
+				}
 				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
 				IF_myASSERT(debugTRACK && SubState != tnetSUBST_CHECK, 0);
 			}
@@ -436,10 +441,10 @@ static void vTnetTask(void *pvParameters) {
 			State = tnetSTATE_AUTHEN; // no char, start authenticate
 			SubState = tnetSUBST_CHECK;
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] options ok\r\n");
-			/* FALLTHRU */ /* no break */
+		}	/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_AUTHEN:
-			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
+		{	if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					State = tnetSTATE_DEINIT;
 					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] authen fail (%d)\r\n", sTerm.sCtx.error);
@@ -454,10 +459,10 @@ static void vTnetTask(void *pvParameters) {
 				xStdioBufUnLock();
 			#endif
 			State = tnetSTATE_RUNNING;
-			/* FALLTHRU */ /* no break */
+		}	/* FALLTHRU */ /* no break */
 
 		case tnetSTATE_RUNNING:
-			// Step 1: read a single character
+		{	// Step 1: read a single character
 			iRV = xNetRecv(&sTerm.sCtx, caChr, 1);
 			if (iRV != 1) {
 				if (sTerm.sCtx.error != EAGAIN) { // socket closed or error (but not EAGAIN)
@@ -473,11 +478,13 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			// Step 2: check if not part of Telnet negotiation
-			if (xTelnetParseChar(caChr[0]) == erSUCCESS)
+			if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
 				break;
+			}
 			// Step 3: Ensure UARTx marked inactive
-			if (configCONSOLE_UART >= 0)
+			if (configCONSOLE_UART >= 0) {
 				clrSYSFLAGS(sfUXACTIVE);
+			}
 			// Step 4: Handle special (non-Telnet) characters
 			if (caChr[0] == CHR_GS) { // cntl + ']'
 				State = tnetSTATE_DEINIT;
@@ -491,7 +498,7 @@ static void vTnetTask(void *pvParameters) {
 			sCmd.sRprt.uSGR = sgrANSI;
 			sCmd.sRprt.fEcho = 1;
 			xCommandProcess(&sCmd);
-			break;
+		}	break;
 
 		default:
 			IF_myASSERT(debugTRACK, 0);
