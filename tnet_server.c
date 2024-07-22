@@ -331,12 +331,14 @@ int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
  * @return	non-zero positive value if nothing to send or all successfully sent
  *			0 (if socket closed) or other negative error code
  */
-int xTelnetFlushBuf(void *pV) {
+int xTelnetFlushBuf(void) {
 	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
-	if (iRV > 0)
+	if (iRV > 0) {
 		xTelnetHandleSGA();
-	if (iRV < erSUCCESS)
+	}
+	if (iRV < erSUCCESS) {
 		State = tnetSTATE_DEINIT;
+	}
 	return (iRV < erSUCCESS) ? iRV : erSUCCESS;
 }
 
@@ -448,7 +450,7 @@ static void vTnetTask(void *pvParameters) {
 			// All options and authentication done, empty the buffer to the client
 			#if (buildSTDOUT_LEVEL > 0)
 				xStdioBufLock(portMAX_DELAY);
-				xTelnetFlushBuf(NULL);
+				xTelnetFlushBuf();
 				xStdioBufUnLock();
 			#endif
 			State = tnetSTATE_RUNNING;
@@ -464,7 +466,7 @@ static void vTnetTask(void *pvParameters) {
 				} else {
 				#if (buildSTDOUT_LEVEL > 0)
 					xStdioBufLock(portMAX_DELAY);
-					xTelnetFlushBuf(NULL);
+					xTelnetFlushBuf();
 					xStdioBufUnLock();
 				#endif
 				}
