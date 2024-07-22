@@ -309,6 +309,12 @@ static int xTelnetSetBaseline(void) {
 	return erSUCCESS;
 }
 
+int xTelnetPutC(xp_t * psXP, int cChr) {
+	u8_t u8Chr = cChr;
+	int iRV = xNetSend(&sTerm.sCtx, &u8Chr, sizeof(u8Chr));
+	return (iRV == sizeof(u8Chr)) ? cChr : iRV; 
+}
+
 /**
  * @brief	Write a block of data to the client device socket
  * @return	number of bytes written or 0 if error
@@ -494,9 +500,10 @@ static void vTnetTask(void *pvParameters) {
 			caChr[1] = 0;
 			command_t sCmd =  { 0 };
 			sCmd.pCmd = caChr;
-			sCmd.Hdlr = xTelnetFlushBuf;
+			sCmd.sRprt.putc = xTelnetPutC;				// character output handler
 			sCmd.sRprt.uSGR = sgrANSI;
 			sCmd.sRprt.fEcho = 1;
+			sCmd.sRprt.fNoLock = 1;						// no reason to lock UART...
 			xCommandProcess(&sCmd);
 		}	break;
 
