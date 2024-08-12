@@ -359,9 +359,8 @@ static void vTnetTask(void *pvParameters) {
 	xRtosSetTaskRUN(taskTNET_MASK);
 
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
-		if (State != tnetSTATE_DEINIT && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) {
+		if (State != tnetSTATE_DEINIT && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0)
 			continue;
-		}
 
 		switch (State) {
 		case tnetSTATE_DEINIT:
@@ -484,9 +483,8 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			// Step 2: check if not part of Telnet negotiation
-			if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
+			if (xTelnetParseChar(caChr[0]) == erSUCCESS)
 				break;
-			}
 			// Step 3: Ensure UARTx marked inactive
 			if (configCONSOLE_UART >= 0) {
 				clrSYSFLAGS(sfUXACTIVE);
