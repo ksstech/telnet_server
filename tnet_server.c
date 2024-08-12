@@ -458,7 +458,7 @@ static void vTnetTask(void *pvParameters) {
 			}
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok\r\n");
 			// All options and authentication done, empty the buffer to the client
-			#if (buildSTDOUT_LEVEL > 0)
+			#if (configCONSOLE_UART > (-1))
 				xStdioBufLock(portMAX_DELAY);
 				xTelnetFlushBuf();
 				xStdioBufUnLock();
@@ -474,7 +474,7 @@ static void vTnetTask(void *pvParameters) {
 					State = tnetSTATE_DEINIT;
 					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)\r\n", sTerm.sCtx.error);
 				} else {
-				#if (buildSTDOUT_LEVEL > 0)
+				#if (configCONSOLE_UART > (-1))
 					xStdioBufLock(portMAX_DELAY);
 					xTelnetFlushBuf();
 					xStdioBufUnLock();
@@ -486,9 +486,9 @@ static void vTnetTask(void *pvParameters) {
 			if (xTelnetParseChar(caChr[0]) == erSUCCESS)
 				break;
 			// Step 3: Ensure UARTx marked inactive
-			if (configCONSOLE_UART >= 0) {
+			#if (configCONSOLE_UART > (-1))
 				clrSYSFLAGS(sfUXACTIVE);
-			}
+			#endif
 			// Step 4: Handle special (non-Telnet) characters
 			if (caChr[0] == CHR_GS) { // cntl + ']'
 				State = tnetSTATE_DEINIT;
