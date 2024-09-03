@@ -510,16 +510,16 @@ static void vTnetTask(void *pvParameters) {
 		}
 	}
 	vTelnetDeInit();
-	vRtosTaskDelete(NULL);
+	vTaskDelete(NULL);
 }
 
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
 		xRtosClearTaskRUN(taskTNET_MASK);
 		xRtosClearTaskDELETE(taskTNET_MASK);
-		TnetHandle = xRtosTaskCreateStatic(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, tnetPRIORITY, tsbTNET, &ttsTNET, tskNO_AFFINITY);
+		TnetHandle = xTaskCreateStaticPinnedToCore(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, tnetPRIORITY, tsbTNET, &ttsTNET, tskNO_AFFINITY);
 	} else {
-		vRtosTaskTerminate(taskTNET_MASK);
+		vTaskSetTerminateFlags(taskTNET_MASK);
 	}
 }
 
