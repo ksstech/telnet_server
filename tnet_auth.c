@@ -70,6 +70,6 @@ int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool b
 
 int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) {
 	if (xAutheticateObject(sd, "User: ", pcUsername, 1) == erSUCCESS)
-		return xAutheticateObject(sd, "Pswd: ", pcPassword, bEcho);
+		return xAutheticateObject(sd, strNL "Pswd: ", pcPassword, bEcho);
 	return erFAILURE;
 }
