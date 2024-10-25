@@ -62,6 +62,7 @@ typedef struct tnet_con_t {
 		};
 		u8_t flag;
 	};
+	u16_t ColX, RowY;
 } tnet_con_t;
 
 // ##################################### Private/Static variables ##################################
@@ -225,12 +226,9 @@ static void vTelnetUpdateOption(void) {
 	switch (sTerm.code) {
 	case tnetOPT_NAWS:
 		if (sTerm.optlen == 4) {
-			#if (includeTERMINAL_CONTROLS == 1) // NOT TESTED, check against RFC
-			vTermSetSize(ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
-			SL_INFO("Applied NAWS C=%d R=%d", ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
-			#else
-			SL_NOT("Ignored NAWS C=%d R=%d", ntohs(*(unsigned short *)sTerm.optdata), ntohs(*(unsigned short *)(sTerm.optdata + 2)));
-			#endif
+            sTerm.ColX = ntohs(*(unsigned short *)sTerm.optdata);
+            sTerm.RowY = ntohs(*(unsigned short *)(sTerm.optdata + 2));
+        	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "Applied NAWS  ColX=%d  RowY=%d" strNL, sTerm.ColX, sTerm.RowY);
 		} else {
 			SL_ERR("Ignored NAWS Len %d != 4", sTerm.optlen);
 		}
@@ -521,8 +519,9 @@ void vTnetStartStop(void) {
 
 void vTnetReport(report_t *psR) {
 	if (xRtosCheckStatus(flagTNET_SERV)) {
-		xNetReport(psR, &sServTNetCtx, "TNETsrv", 0, 0, 0);
-		wprintfx(psR, "\tFSM=%d  maxTX=%u  maxRX=%u\r\n", State, sServTNetCtx.maxTx, sServTNetCtx.maxRx);
+		xNetReport(psR, &sServTNetCtx, "TNsrv", 0, 0, 0);
+		wprintfx(psR, "\tFSM=%d  [maxTX=%u  maxRX=%u] [MaxX=%hu  MaxY=%hu]" strNL, State,
+						sServTNetCtx.maxTx, sServTNetCtx.maxRx, sTerm.ColX, sTerm.RowY);
 	}
 	if (xRtosCheckStatus(flagTNET_CLNT)) {
 		xNetReport(psR, &sTerm.sCtx, "TNETclt", 0, 0, 0);
