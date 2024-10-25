@@ -524,16 +524,14 @@ void vTnetReport(report_t *psR) {
 						sServTNetCtx.maxTx, sServTNetCtx.maxRx, sTerm.ColX, sTerm.RowY);
 	}
 	if (xRtosCheckStatus(flagTNET_CLNT)) {
-		xNetReport(psR, &sTerm.sCtx, "TNETclt", 0, 0, 0);
-		#if (debugTRACK)
-		if (ioB1GET(ioTNETtrack)) {
-			wprintfx(psR, "%CTNETxxx%C\t", xpfSGR(0,0,colourFG_CYAN,0), xpfSGR(0,0,attrRESET,0));
+		xNetReport(psR, &sTerm.sCtx, "TNclt", 0, 0, 0);
+		if (debugTRACK && ioB1GET(ioTNETtrack)) {
+			wprintfx(psR, "%CTNopt%C\t", xpfCOL(colourFG_CYAN,0), xpfCOL(attrRESET,0));
 			for (int idx = tnetOPT_ECHO; idx < tnetOPT_MAX_VAL; ++idx) {
 				if (idx == 17 || idx == 33) wprintfx(psR, strNL "\t");
 				wprintfx(psR, "%d/%s=%s ", idx, xTelnetFindName(idx), codename[xTelnetGetOption(idx)]);
 			}
 			wprintfx(psR, strNL);
 		}
-		#endif
 	}
 }
