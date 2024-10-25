@@ -535,11 +535,5 @@ void vTnetReport(report_t *psR) {
 			wprintfx(psR, strNL);
 		}
 		#endif
-		#if (includeTERMINAL_CONTROLS == 1)
-		terminfo_t TermInfo;
-		vTermGetInfo(&TermInfo);
-		wprintfx(psR, "%CTNETwin%C\tCx=%d  Cy=%d  Mx=%d  My=%d\r\n", xpfSGR(0,0,colourFG_CYAN,0),
-				 xpfSGR(0,0,attrRESET,0), TermInfo.CurX, TermInfo.CurY, TermInfo.MaxX, TermInfo.MaxY);
-		#endif
 	}
 }
