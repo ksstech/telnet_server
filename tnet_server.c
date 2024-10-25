@@ -497,13 +497,7 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			// Step 4: must be a normal command character, process as if from UART console....
-			caChr[1] = 0;
-			command_t sCmd =  { 0 };
-			sCmd.pCmd = caChr;
-			sCmd.sRprt.putc = xTelnetPutC;				// character output handler
-			sCmd.sRprt.uSGR = sgrANSI;
-			sCmd.sRprt.fEcho = 1;
-			sCmd.sRprt.fNoLock = 1;						// no reason to lock UART...
+			command_t sCmd =  { .pCmd = &caChr[0], .sRprt.putc = xTelnetPutC, .sRprt.fEcho = 1, .sRprt.fNoLock = 1 };
 			xCommandProcess(&sCmd);
 		}	break;
 
