@@ -496,7 +496,7 @@ static void vTnetTask(void *pvParameters) {
 				State = tnetSTATE_DEINIT;
 				break;
 			}
-			// Step 4: must be a normal command character, process as if from UART console....
+			// Step 5: must be a normal command character, process as if from UART console....
 			command_t sCmd =  { .pCmd = &caChr[0], .sRprt.putc = xTelnetPutC, .sRprt.fEcho = 1, .sRprt.fNoLock = 1 };
 			xCommandProcess(&sCmd);
 		}	break;
