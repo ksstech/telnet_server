@@ -123,7 +123,7 @@ static const char *xTelnetFindName(u8_t opt) {
  * @param code		WILL / WONT / DO / DONT
  */
 static void xTelnetSetOption(u8_t opt, u8_t cmd) {
-	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "o=%d  c=%d", opt, cmd);
+	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "o=%s(%d)  c=%d", xTelnetFindName(opt), opt, cmd);
 	IF_myASSERT(debugPARAM, INRANGE(tnetWILL, cmd, tnetDONT));
 	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS));
 	u8_t Xidx = opt / 4;	   // 2 bits/value, 4 options/byte
@@ -141,7 +141,7 @@ static void xTelnetSetOption(u8_t opt, u8_t cmd) {
 static u8_t xTelnetGetOption(u8_t opt) {
 	IF_myASSERT(debugPARAM, INRANGE(tnetOPT_ECHO, opt, tnetOPT_STRT_TLS));
 	u8_t val = (sTerm.options[opt / 4] >> ((opt % 4) * 2)) & 0x03;
-	IF_PL(debugTRACK && ioB1GET(ioTNETtrack), "o=%d  v=%d\r\n", opt, val);
+	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "o=%s(%d)  v=%d" strNL, xTelnetFindName(opt), opt, val);
 	return val;
 }
 
@@ -203,7 +203,7 @@ static void vTelnetSendOption(u8_t opt, u8_t cmd) {
  *	Do Status
  */
 static void vTelnetNegotiate(u8_t opt, u8_t cmd) {
-	IF_PL(debugTRACK && ioB1GET(ioTNETtrack), "%02d/%s = %s\r\n", opt, xTelnetFindName(opt), codename[cmd - tnetWILL]);
+	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "o=%s(%d) = %s" strNL, xTelnetFindName(opt), opt, codename[cmd - tnetWILL]);
 	switch (opt) {
 	case tnetOPT_ECHO: {            // Client must not (DONT) and server WILL
 		vTelnetSendOption(opt, (cmd == tnetWILL || cmd == tnetWONT) ? tnetDONT : tnetWILL);
