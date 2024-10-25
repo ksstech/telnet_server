@@ -94,6 +94,13 @@ static u8_t State, SubState;
 
 // ####################################### private functions #######################################
 
+static void vTelnetUpdateStats(void) {
+	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx)
+		sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
+	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx)
+		sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
+}
+
 static void vTelnetDeInit(void) {
 	if (sTerm.sCtx.sd > 0)
 		xNetClose(&sTerm.sCtx);
@@ -107,12 +114,16 @@ static void vTelnetDeInit(void) {
 	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit" strNL);
 }
 
+static int xTelnetPutC(xp_t * psXP, int cChr) {
+	u8_t u8Chr = cChr;
+	int iRV = xNetSend(&sTerm.sCtx, &u8Chr, sizeof(u8Chr));
+	return (iRV == sizeof(u8Chr)) ? cChr : iRV; 
+}
+
 static const char *xTelnetFindName(u8_t opt) {
 	u8_t idx;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
-		if (options.val[idx] == opt) {
-			break;
-		}
+		if (options.val[idx] == opt) break;
 	}
 	return options.name[idx];
 }
@@ -145,13 +156,6 @@ static u8_t xTelnetGetOption(u8_t opt) {
 	return val;
 }
 
-static void vTelnetUpdateStats(void) {
-	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx)
-		sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
-	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx)
-		sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
-}
-
 static int xTelnetHandleSGA(void) {
 	int iRV = xTelnetGetOption(tnetOPT_SGA);
 	if (iRV == valDONT || iRV == valWONT) {
@@ -166,10 +170,10 @@ static int xTelnetHandleSGA(void) {
 }
 
 /**
- * xTelnetSendOptions() - send a single option to the client
- * @param o1	Option
- * @param o2	Value
- * @return		erSUCCESS or (-) error code or (+) number of bytes (very unlikely)
+ * @brief	send a single option to the client
+ * @param	opt - Option
+ * @param	cmd - Value
+ * @return	erSUCCESS or (-) error code or (+) number of bytes (very unlikely)
  */
 static void vTelnetSendOption(u8_t opt, u8_t cmd) {
 	u8_t cBuf[3] = {tnetIAC, cmd, opt};
@@ -310,13 +314,18 @@ static int xTelnetSetBaseline(void) {
 		vTelnetSendOption(tnetOPT_SGA, tnetDO);
 		vTelnetSendOption(tnetOPT_SGA, tnetWILL);
 	}
+	/*					Putty			MikroTik		Serial
+	 *	WONT	DONT	
+	 *	WILL	DONT	
+	 *	WONT	DO		
+	 *	WILL	DO		
+	 */
+	iRV = xTelnetGetOption(tnetOPT_NAWS);
+	if (iRV == valWONT || iRV == valDONT) {
+		vTelnetSendOption(tnetOPT_NAWS, tnetDO);
+		vTelnetSendOption(tnetOPT_NAWS, tnetWILL);
+	}
 	return erSUCCESS;
-}
-
-int xTelnetPutC(xp_t * psXP, int cChr) {
-	u8_t u8Chr = cChr;
-	int iRV = xNetSend(&sTerm.sCtx, &u8Chr, sizeof(u8Chr));
-	return (iRV == sizeof(u8Chr)) ? cChr : iRV; 
 }
 
 /**
@@ -363,10 +372,7 @@ static void vTnetTask(void *pvParameters) {
 	xRtosSetTaskRUN(taskTNET_MASK);
 
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
-		if ((State != tnetSTATE_DEINIT) && 
-			xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) {
-			continue;
-		}
+		if ((State != tnetSTATE_DEINIT) && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) continue;
 		switch (State) {
 		case tnetSTATE_DEINIT: {
 			vTelnetDeInit();
@@ -419,6 +425,8 @@ static void vTnetTask(void *pvParameters) {
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "accept ok" strNL);
 			State = tnetSTATE_OPTIONS; // and start processing options
 			SubState = tnetSUBST_CHECK;
+			sTerm.RowY = TERMINAL_DFLT_Y;
+			sTerm.ColX = TERMINAL_DFLT_X;
 			xTelnetSetBaseline();
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] baseline ok" strNL);
 		}	/* FALLTHRU */ /* no break */
@@ -431,13 +439,9 @@ static void vTnetTask(void *pvParameters) {
 					break;
 				}
 				/* EAGAIN so unless completed OPTIONS phase (tnetSUBST_CHECK) try again */
-				if (SubState != tnetSUBST_CHECK) {
-					break;
-				}
+				if (SubState != tnetSUBST_CHECK) break;
 			} else {
-				if (xTelnetParseChar(caChr[0]) == erSUCCESS) {
-					break;
-				}
+				if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
 				/* still in OPTIONS, read a character, was NOT parsed as a valid OPTION char, then HWHAP !!! */
 				IF_myASSERT(debugTRACK && SubState != tnetSUBST_CHECK, 0);
 			}
@@ -458,7 +462,7 @@ static void vTnetTask(void *pvParameters) {
 				}
 				break;
 			}
-			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth ok" strNL);
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth %s" strNL, ioB1GET(ioTNETauth) ? "PASS" : "Skip");
 			// All options and authentication done, empty the buffer to the client
 			#if (configCONSOLE_UART > (-1))
 				xStdioBufLock(portMAX_DELAY);
@@ -483,8 +487,7 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			// Step 2: check if not part of Telnet negotiation
-			if (xTelnetParseChar(caChr[0]) == erSUCCESS)
-				break;
+			if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
 			// Step 3: Ensure UARTx marked inactive
 			#if (configCONSOLE_UART > (-1))
 				clrSYSFLAGS(sfUXACTIVE);
@@ -495,12 +498,14 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			// Step 5: must be a normal command character, process as if from UART console....
-			command_t sCmd =  { .pCmd = &caChr[0], .sRprt.putc = xTelnetPutC, .sRprt.fEcho = 1, .sRprt.fNoLock = 1 };
+			command_t sCmd = { .pCmd=&caChr[0], .sRprt.putc=xTelnetPutC, .sRprt.fEcho=1, .sRprt.fNoLock=1, .sRprt.uSGR=sgrANSI };
+			vTermPushMaxRowYColX();											// push/save current MaxXY values (UART)
+			vTermSetMaxRowYColX(sTerm.RowY, sTerm.ColX);					// set new MaxXY values (Telnet)
 			xCommandProcess(&sCmd);
-		}	break;
-
-		default:
-			IF_myASSERT(debugTRACK, 0);
+			vTermPullMaxRowYColX();											// pull/restore original MaxXY values (UART)
+			break;
+		}
+		default: IF_myASSERT(debugTRACK, 0);
 		}
 	}
 	vTelnetDeInit();
