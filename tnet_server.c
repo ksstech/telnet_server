@@ -332,7 +332,7 @@ static int xTelnetSetBaseline(void) {
  * @brief	Write a block of data to the client device socket
  * @return	number of bytes written or 0 if error
  */
-int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
+static int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
 	int iRV = xNetSend(&sTerm.sCtx, pBuf, Size);
 	if (iRV < 0) {
 		xSyslogError(__FUNCTION__, iRV);
@@ -349,7 +349,7 @@ int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
  * @brief	send any/all buffered data to client
  * @return	0 (nothing to send), > 0 (bytes successfully sent) else < 0 (error code)
  */
-int xTelnetFlushBuf(void) {
+static int xTelnetFlushBuf(void) {
 	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
 	if (iRV > erSUCCESS) xTelnetHandleSGA();
 	if (iRV < erSUCCESS) State = tnetSTATE_DEINIT;
