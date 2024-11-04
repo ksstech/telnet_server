@@ -465,9 +465,7 @@ static void vTnetTask(void *pvParameters) {
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth %s" strNL, ioB1GET(ioTNETauth) ? "PASS" : "Skip");
 			// All options and authentication done, empty the buffer to the client
 			#if (configCONSOLE_UART > (-1))
-				xStdioBufLock(portMAX_DELAY);
 				xTelnetFlushBuf();
-				xStdioBufUnLock();
 			#endif
 			State = tnetSTATE_RUNNING;
 		}	/* FALLTHRU */ /* no break */
@@ -479,9 +477,7 @@ static void vTnetTask(void *pvParameters) {
 					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)" strNL, sTerm.sCtx.error);
 				} else {
 				#if (configCONSOLE_UART > (-1))
-					xStdioBufLock(portMAX_DELAY);
 					xTelnetFlushBuf();
-					xStdioBufUnLock();
 				#endif
 				}
 				break;
