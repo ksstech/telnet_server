@@ -455,7 +455,7 @@ static void vTnetTask(void *pvParameters) {
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] options ok" strNL);
 		}	/* FALLTHRU */ /* no break */
 		case tnetSTATE_AUTHEN: {
-			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, true) != erSUCCESS) {
+			if (ioB1GET(ioTNETauth) && xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, ioB1GET(ioTNETEcho)) != erSUCCESS) {
 				if (errno != EAGAIN) {
 					State = tnetSTATE_DEINIT;
 					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] authen fail (%d)" strNL, sTerm.sCtx.error);
