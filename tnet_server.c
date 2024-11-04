@@ -334,13 +334,9 @@ static int xTelnetSetBaseline(void) {
  */
 static int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
 	int iRV = xNetSend(&sTerm.sCtx, pBuf, Size);
-	if (iRV < 0) {
-		xSyslogError(__FUNCTION__, iRV);
-		iRV = 0;
-	} else if (iRV != Size) {
-		SL_WARN("Incomplete write %d != %d", Size, iRV);
-	}
-	vTelnetUpdateStats();
+	if (iRV < 0)			SL_ERROR(iRV);
+	else if (iRV != Size)	SL_WARN("Incomplete write %d != %d", Size, iRV);
+	if (iRV > erFAILURE)	vTelnetUpdateStats();
 	return iRV;
 }
 
