@@ -347,18 +347,13 @@ int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
 
 /**
  * @brief	send any/all buffered data to client
- * @return	non-zero positive value if nothing to send or all successfully sent
- *			0 (if socket closed) or other negative error code
+ * @return	0 (nothing to send), > 0 (bytes successfully sent) else < 0 (error code)
  */
 int xTelnetFlushBuf(void) {
 	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
-	if (iRV > 0) {
-		xTelnetHandleSGA();
-	}
-	if (iRV < erSUCCESS) {
-		State = tnetSTATE_DEINIT;
-	}
-	return (iRV < erSUCCESS) ? iRV : erSUCCESS;
+	if (iRV > erSUCCESS) xTelnetHandleSGA();
+	if (iRV < erSUCCESS) State = tnetSTATE_DEINIT;
+	return iRV;
 }
 
 /**
@@ -374,12 +369,9 @@ static void vTnetTask(void *pvParameters) {
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
 		if ((State != tnetSTATE_DEINIT) && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) continue;
 		switch (State) {
-		case tnetSTATE_DEINIT: {
-			vTelnetDeInit();
-			break;					// must NOT fall through, IP Lx might have changed
-		}
-		case tnetSTATE_INIT:
-		{	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init" strNL);
+		case tnetSTATE_DEINIT: vTelnetDeInit(); break;	// must NOT fall through, IP Lx might have changed
+		case tnetSTATE_INIT: {
+			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init" strNL);
 			memset(&sServTNetCtx, 0, sizeof(sServTNetCtx));
 			sServTNetCtx.sa_in.sin_family = AF_INET;
 			sServTNetCtx.sa_in.sin_port = htons(IP_PORT_TELNET);
@@ -405,8 +397,8 @@ static void vTnetTask(void *pvParameters) {
 			State = tnetSTATE_WAITING;
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting" strNL);
 		}	/* FALLTHRU */ /* no break */
-		case tnetSTATE_WAITING:
-		{	iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetINTERVAL_MS);
+		case tnetSTATE_WAITING: {
+			iRV = xNetAccept(&sServTNetCtx, &sTerm.sCtx, tnetINTERVAL_MS);
 			if (iRV < erSUCCESS) {
 				if ((sServTNetCtx.error != EAGAIN) && (sServTNetCtx.error != ECONNABORTED)) {
 					State = tnetSTATE_DEINIT;
