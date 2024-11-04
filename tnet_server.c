@@ -340,7 +340,6 @@ static int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
 	} else if (iRV != Size) {
 		SL_WARN("Incomplete write %d != %d", Size, iRV);
 	}
-	vUBufStepRead(&sRTCvars.sRTCbuf, iRV);
 	vTelnetUpdateStats();
 	return iRV;
 }
