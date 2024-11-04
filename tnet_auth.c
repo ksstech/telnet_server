@@ -1,10 +1,10 @@
 // tnet_auth.c -Copyright (c) 2017-24 Andre M. Maree / KSS Technologies (Pty) Ltd.
 
-#include "FreeRTOS_Support.h"
 #include "tnet_auth.h"
-#include "x_errors_events.h"
+#include "printfx.h"
+#include "stdioX.h"
 #include "socketsX.h"
-#include "printfx.h"									// +x_definitions +stdarg +stdint +stdio
+#include "errors_events.h"
 
 // ############################### BUILD: debug configuration options ##############################
 

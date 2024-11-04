@@ -13,8 +13,8 @@
 #include "syslog.h"
 #include "tnet_auth.h"
 #include "tnet_server.h"
-#include "x_terminal.h"
-#include "x_errors_events.h"
+#include "terminalX.h"
+#include "errors_events.h"
 
 #include <errno.h>
 
