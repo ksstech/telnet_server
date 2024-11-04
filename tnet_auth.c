@@ -19,18 +19,14 @@
 
 int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
 	char Buf[35];
-	if (pcPrompt)
-		dprintfx(sd, pcPrompt);
+	if (pcPrompt) dprintfx(sd, pcPrompt);
 	int iRV = xReadString(sd, Buf, sizeof(Buf), bEcho);
-	if (iRV <= 0)
-		return erFAILURE;
-	if (strcmp((char *) Buf, pcKey) != 0)
-		return erFAILURE;
+	if (iRV <= 0) return erFAILURE;
+	if (strcmp((char *) Buf, pcKey) != 0) return erFAILURE;
 	return erSUCCESS;
 }
 
 int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) {
-	if (xAutheticateObject(sd, "User: ", pcUsername, 1) == erSUCCESS)
-		return xAutheticateObject(sd, strNL "Pswd: ", pcPassword, bEcho);
-	return erFAILURE;
+	if (xAutheticateObject(sd, "User: ", pcUsername, 1) != erSUCCESS) return erFAILURE;
+	return xAutheticateObject(sd, "Pswd: ", pcPassword, bEcho);
 }
