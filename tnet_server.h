@@ -70,9 +70,6 @@ enum tnetSUBST {
 // ######################################## global variables #######################################
 // ################################### GLOBAL Function Prototypes ##################################
 
-//struct xp_t;
-//int xTelnetPutC(struct xp_t * psXP, int cChr);
-//int xTelnetWriteBlock(u8_t * pBuf, ssize_t Size);
 void vTnetStartStop(void);
 
 struct report_t;
