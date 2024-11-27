@@ -17,16 +17,16 @@
 
 // ######################################## Public functions #######################################
 
-int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho) {
+int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bHide) {
 	char Buf[35];
 	if (pcPrompt) dprintfx(sd, pcPrompt);
-	int iRV = xReadString(sd, Buf, sizeof(Buf), bEcho);
+	int iRV = xReadString(sd, Buf, sizeof(Buf), bHide);
 	if (iRV <= 0) return erFAILURE;
 	if (strcmp((char *) Buf, pcKey) != 0) return erFAILURE;
 	return erSUCCESS;
 }
 
-int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho) {
+int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bHide) {
 	if (xAutheticateObject(sd, "User: ", pcUsername, 1) != erSUCCESS) return erFAILURE;
-	return xAutheticateObject(sd, "Pswd: ", pcPassword, bEcho);
+	return xAutheticateObject(sd, "Pswd: ", pcPassword, bHide);
 }

@@ -26,7 +26,7 @@ extern "C" {
 
 // ################################### Public/global functions #####################################
 
-int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho);
+int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bHide);
 
 #ifdef __cplusplus
 }
