@@ -321,6 +321,7 @@ static int xTelnetSetBaseline(void) {
 	return erSUCCESS;
 }
 
+#if (buildNEW_CODE == 0)
 /**
  * @brief	Write a block of data to the client device socket
  * @return	number of bytes written or 0 if error
@@ -332,6 +333,14 @@ static int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
 	if (iRV > erFAILURE)	vTelnetUpdateStats();
 	return iRV;
 }
+
+static int xTelnetFlushBuf(void) {
+	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
+	if (iRV > 0) xTelnetHandleSGA();
+	if (iRV < 0) State = tnetSTATE_DEINIT;
+	return iRV;
+}
+#endif
 
 /**
  * @brief	send any/all buffered data to client
