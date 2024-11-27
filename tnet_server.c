@@ -95,20 +95,16 @@ static u8_t State, SubState;
 // ####################################### private functions #######################################
 
 static void vTelnetUpdateStats(void) {
-	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx)
-		sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
-	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx)
-		sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
+	if (sServTNetCtx.maxTx < sTerm.sCtx.maxTx) sServTNetCtx.maxTx = sTerm.sCtx.maxTx;
+	if (sServTNetCtx.maxRx < sTerm.sCtx.maxRx) sServTNetCtx.maxRx = sTerm.sCtx.maxRx;
 }
 
 static void vTelnetDeInit(void) {
-	if (sTerm.sCtx.sd > 0)
-		xNetClose(&sTerm.sCtx);
+	if (sTerm.sCtx.sd > 0) xNetClose(&sTerm.sCtx);
 	xRtosClearStatus(flagTNET_CLNT);
 	sTerm.Running = 0;
 
-	if (sServTNetCtx.sd > 0)
-		xNetClose(&sServTNetCtx);
+	if (sServTNetCtx.sd > 0) xNetClose(&sServTNetCtx);
 	xRtosClearStatus(flagTNET_SERV);
 	State = tnetSTATE_INIT;
 	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit" strNL);
@@ -129,9 +125,9 @@ static const char *xTelnetFindName(u8_t opt) {
 }
 
 /**
- * xTelnetSetOption() - store the value (WILL/WONT/DO/DONT) for a specific option.
- * @param option	ECHO ... START_TLS
- * @param code		WILL / WONT / DO / DONT
+ * @brief		store the value (WILL/WONT/DO/DONT) for a specific option.
+ * @param[in]	option - ECHO ... START_TLS
+ * @param[in]	code - WILL / WONT / DO / DONT
  */
 static void xTelnetSetOption(u8_t opt, u8_t cmd) {
 	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "o=%s(%d)  c=%d", xTelnetFindName(opt), opt, cmd);
@@ -161,10 +157,7 @@ static int xTelnetHandleSGA(void) {
 	if (iRV == valDONT || iRV == valWONT) {
 		u8_t cGA = tnetGA;
 		iRV = xNetSend(&sTerm.sCtx, &cGA, sizeof(cGA));
-		if (iRV != sizeof(cGA)) {
-			vTelnetDeInit();
-			return erFAILURE;
-		}
+		if (iRV != sizeof(cGA)) { vTelnetDeInit(); return erFAILURE; }
 	}
 	return erSUCCESS;
 }
@@ -244,51 +237,47 @@ static void vTelnetUpdateOption(void) {
 
 static int xTelnetParseChar(int cChr) {
 	switch (SubState) {
-	case tnetSUBST_CHECK:
+	case tnetSUBST_CHECK: {
 		if (cChr == tnetIAC) SubState = tnetSUBST_IAC;
 		else if (cChr != tnetGA) return cChr; // RETURN the character
 		break;
-	case tnetSUBST_IAC:
+	}
+	case tnetSUBST_IAC: {
 		switch (cChr) {
-		case tnetSB:
-			SubState = tnetSUBST_SB;
-			break;
+		case tnetSB: SubState = tnetSUBST_SB; break;
 		case tnetWILL:
 		case tnetWONT:
 		case tnetDO:
-		case tnetDONT:
-			sTerm.code = cChr; 
-			SubState = tnetSUBST_OPT; 
-			break;
-		case tnetIAC:
-			SubState = tnetSUBST_CHECK; 
-			return cChr; // RETURN 2nd IAC
-		default:
-			SubState = tnetSUBST_CHECK;
+		case tnetDONT: sTerm.code = cChr; SubState = tnetSUBST_OPT; break;
+		case tnetIAC: SubState = tnetSUBST_CHECK; return cChr; // RETURN 2nd IAC
+		default: SubState = tnetSUBST_CHECK;
 		}
 		break;
-	case tnetSUBST_SB: // option ie NAWS, SPEED, TYPE etc
+	}
+	case tnetSUBST_SB: {								// option ie NAWS, SPEED, TYPE etc
 		sTerm.code = cChr;
 		sTerm.optlen = 0;
 		SubState = tnetSUBST_OPTDAT;
 		break;
-	case tnetSUBST_OPT:
+	}
+	case tnetSUBST_OPT: {
 		vTelnetNegotiate(cChr, sTerm.code);
 		SubState = tnetSUBST_CHECK;
 		break;
-	case tnetSUBST_OPTDAT:
+	}
+	case tnetSUBST_OPTDAT: {
 		if (cChr == tnetIAC) SubState = tnetSUBST_SE;
 		else if (sTerm.optlen < sizeof(sTerm.optdata)) sTerm.optdata[sTerm.optlen++] = cChr;
 		break;
-	case tnetSUBST_SE:
+	}
+	case tnetSUBST_SE: {
 		if (cChr == tnetSE) {
 			vTelnetUpdateOption();
 			SubState = tnetSUBST_CHECK;
 			break;
 		}
-		/* FALLTHRU */ /* no break */
-	default:
-		IF_myASSERT(debugTRACK, 0);
+	}	/* FALLTHRU */ /* no break */
+	default: IF_myASSERT(debugTRACK, 0);
 	}
 	return erSUCCESS;
 }
@@ -364,7 +353,10 @@ static void vTnetTask(void *pvParameters) {
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
 		if ((State != tnetSTATE_DEINIT) && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) continue;
 		switch (State) {
-		case tnetSTATE_DEINIT: vTelnetDeInit(); break;	// must NOT fall through, IP Lx might have changed
+		case tnetSTATE_DEINIT: {
+			vTelnetDeInit();
+			break;										// must NOT fall through, IP Lx might have changed
+		}
 		case tnetSTATE_INIT: {
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] init" strNL);
 			memset(&sServTNetCtx, 0, sizeof(sServTNetCtx));

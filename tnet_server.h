@@ -14,27 +14,27 @@ extern "C" {
 // ######################################### enumerations ##########################################
 
 enum tnetCMD {
-    tnetSE        		= 240,				// Subnegotiation End
-    tnetNOP        		= 241,				// No OPeration
-    tnetDM        		= 242,				// Data Mark
-    tnetBRK        		= 243,				// NVT Character BReaK
-    tnetIP        		= 244,				// Interrupt Process
-    tnetAO        		= 245,				// Abort Output
-    tnetAYT       		= 246,				// Are You There
-    tnetEC        		= 247,				// Erase Character
-    tnetEL        		= 248,				// Erase Line
-    tnetGA        		= 249,				// Go Ahead
-    tnetSB        		= 250,				// Subnegotiation Begin
+    tnetSE        		= 240,		// Subnegotiation End
+    tnetNOP        		= 241,		// No OPeration
+    tnetDM        		= 242,		// Data Mark
+    tnetBRK        		= 243,		// NVT Character BReaK
+    tnetIP        		= 244,		// Interrupt Process
+    tnetAO        		= 245,		// Abort Output
+    tnetAYT       		= 246,		// Are You There
+    tnetEC        		= 247,		// Erase Character
+    tnetEL        		= 248,		// Erase Line
+    tnetGA        		= 249,		// Go Ahead
+    tnetSB        		= 250,		// Subnegotiation Begin
     tnetWILL        	= 251,
     tnetWONT        	= 252,
     tnetDO        		= 253,
     tnetDONT        	= 254,
-	tnetIAC				= 255,				// Interpret As Command
+	tnetIAC				= 255,		// Interpret As Command
 } ;
 
 enum tnetOPT {
-	tnetOPT_ECHO		= 1,				// https://tools.ietf.org/pdf/rfc857.pdf
-	tnetOPT_SGA			= 3,				// https://tools.ietf.org/pdf/rfc858.pdf
+	tnetOPT_ECHO		= 1,		// https://tools.ietf.org/pdf/rfc857.pdf
+	tnetOPT_SGA			= 3,		// https://tools.ietf.org/pdf/rfc858.pdf
 	tnetOPT_TTYPE		= 24,
 	tnetOPT_NAWS		= 31,
 	tnetOPT_TSPEED		= 32,
