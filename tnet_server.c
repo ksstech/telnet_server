@@ -338,10 +338,18 @@ static int xTelnetWriteBlock(u8_t *pBuf, ssize_t Size) {
  * @return	0 (nothing to send), > 0 (bytes successfully sent) else < 0 (error code)
  */
 static int xTelnetFlushBuf(void) {
-	int iRV = xStdioEmptyBlock(xTelnetWriteBlock);
-	if (iRV > erSUCCESS) xTelnetHandleSGA();
-	if (iRV < erSUCCESS) State = tnetSTATE_DEINIT;
-	return iRV;
+	int iRV = 0, Count = 0;
+	while (xStdioBufAvail() > 0) {
+		iRV = xStdioBufGetC();
+		if (iRV < 1)								break;
+		u8_t cChr = iRV;
+		iRV = xNetSend(&sTerm.sCtx, &cChr, sizeof(cChr));
+		if (iRV < 1)								break;
+		++Count;
+	}
+	if (Count) xTelnetHandleSGA();
+	if (iRV < 0) State = tnetSTATE_DEINIT;
+	return Count;
 }
 
 /**
