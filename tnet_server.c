@@ -446,10 +446,6 @@ static void vTnetTask(void *pvParameters) {
 				break;
 			}
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] auth %s" strNL, ioB1GET(ioTNETauth) ? "PASS" : "Skip");
-			// All options and authentication done, empty the buffer to the client
-			#if (configCONSOLE_UART > (-1))
-				xTelnetFlushBuf();
-			#endif
 			State = tnetSTATE_RUNNING;
 		}	/* FALLTHRU */ /* no break */
 		case tnetSTATE_RUNNING: {
@@ -460,22 +456,20 @@ static void vTnetTask(void *pvParameters) {
 					IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] read fail (%d)" strNL, sTerm.sCtx.error);
 				} else {
 				#if (configCONSOLE_UART > (-1))
-					xTelnetFlushBuf();
+					iRV = xTelnetFlushBuf();
+					if (iRV < erSUCCESS) State = tnetSTATE_DEINIT;
 				#endif
 				}
 				break;
 			}
 			// Step 2: check if not part of Telnet negotiation
 			if (xTelnetParseChar(caChr[0]) == erSUCCESS) break;
-			// Step 3: Ensure UARTx marked inactive
+			// Step 3: Handle special (non-Telnet) characters
+			if (caChr[0] == CHR_GS) { State = tnetSTATE_DEINIT; break; }	// cntl + ']'
+			// Step 4: Ensure UARTx marked inactive, empty buffer if anything there
 			#if (configCONSOLE_UART > (-1))
 				clrSYSFLAGS(sfUXACTIVE);
 			#endif
-			// Step 4: Handle special (non-Telnet) characters
-			if (caChr[0] == CHR_GS) { // cntl + ']'
-				State = tnetSTATE_DEINIT;
-				break;
-			}
 			// Step 5: must be a normal command character, process as if from UART console....
 			command_t sCmd = { .pCmd=&caChr[0], .sRprt.putc=xTelnetPutC, .sRprt.fEcho=1, .sRprt.fNoLock=1, .sRprt.uSGR=sgrANSI };
 			vTermPushMaxRowYColX();											// push/save current MaxXY values (UART)
