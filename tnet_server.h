@@ -46,7 +46,14 @@ enum tnetOPT {
 	tnetOPT_UNDEF		= 255,
 } ;
 
-enum tnetOPT_VAL { valWILL, valWONT, valDO, valDONT };
+enum tnetOPT_VAL {
+	valWILL,						// sender of command requests permission; or
+									// sender of command confirms it will now begin
+	valWONT,						// sender of command demands that receiver of data begin or continue ...
+	valDO, 							// sender requests that sender start; or
+									// sender of command confirms that sender of data is expected to 
+	valDONT,						// sender of command demands that receiver of data start or continue
+};
 
 enum tnetSTATE {
 	tnetSTATE_DEINIT = 1,

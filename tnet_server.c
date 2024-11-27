@@ -152,6 +152,10 @@ static u8_t xTelnetGetOption(u8_t opt) {
 	return val;
 }
 
+/**
+ * @brief	
+ * @return	erSUCCESS or erFAILURE
+ */
 static int xTelnetHandleSGA(void) {
 	int iRV = xTelnetGetOption(tnetOPT_SGA);
 	if (iRV == valDONT || iRV == valWONT) {
