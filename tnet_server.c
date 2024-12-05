@@ -350,10 +350,10 @@ static int xTelnetFlushBuf(void) {
 	int iRV = 0, Count = 0;
 	while (xStdioBufAvail() > 0) {
 		iRV = xStdioBufGetC();
-		if (iRV < 1)								break;
+		if (iRV < sizeof(u8_t))						break;
 		u8_t cChr = iRV;
 		iRV = xNetSend(&sTerm.sCtx, &cChr, sizeof(cChr));
-		if (iRV < 1)								break;
+		if (iRV < sizeof(u8_t))						break;
 		++Count;
 	}
 	if (Count) xTelnetHandleSGA();
