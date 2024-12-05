@@ -242,19 +242,19 @@ static void vTelnetUpdateOption(void) {
 static int xTelnetParseChar(int cChr) {
 	switch (SubState) {
 	case tnetSUBST_CHECK: {
-		if (cChr == tnetIAC) SubState = tnetSUBST_IAC;
-		else if (cChr != tnetGA) return cChr; // RETURN the character
+		if (cChr == tnetIAC)						SubState = tnetSUBST_IAC;
+		else if (cChr != tnetGA)					return cChr;			// RETURN the character
 		break;
 	}
 	case tnetSUBST_IAC: {
 		switch (cChr) {
-		case tnetSB: SubState = tnetSUBST_SB; break;
+		case tnetSB: 								SubState = tnetSUBST_SB; break;
 		case tnetWILL:
 		case tnetWONT:
 		case tnetDO:
-		case tnetDONT: sTerm.code = cChr; SubState = tnetSUBST_OPT; break;
-		case tnetIAC: SubState = tnetSUBST_CHECK; return cChr; // RETURN 2nd IAC
-		default: SubState = tnetSUBST_CHECK;
+		case tnetDONT:		sTerm.code = cChr; 		SubState = tnetSUBST_OPT; break;
+		case tnetIAC:								SubState = tnetSUBST_CHECK; return cChr; // RETURN 2nd IAC
+		default: 									SubState = tnetSUBST_CHECK;
 		}
 		break;
 	}
@@ -270,7 +270,7 @@ static int xTelnetParseChar(int cChr) {
 		break;
 	}
 	case tnetSUBST_OPTDAT: {
-		if (cChr == tnetIAC) SubState = tnetSUBST_SE;
+		if (cChr == tnetIAC)						SubState = tnetSUBST_SE;
 		else if (sTerm.optlen < sizeof(sTerm.optdata)) sTerm.optdata[sTerm.optlen++] = cChr;
 		break;
 	}
@@ -321,7 +321,7 @@ static int xTelnetSetBaseline(void) {
 	return erSUCCESS;
 }
 
-#if (buildNEW_CODE == 0)
+#if 0
 /**
  * @brief	Write a block of data to the client device socket
  * @return	number of bytes written or 0 if error
