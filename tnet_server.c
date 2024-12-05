@@ -258,15 +258,15 @@ static int xTelnetParseChar(int cChr) {
 		}
 		break;
 	}
+	case tnetSUBST_OPT: {
+		vTelnetNegotiate(cChr, sTerm.code);
+		SubState = tnetSUBST_CHECK;
+		break;
+	}
 	case tnetSUBST_SB: {								// option ie NAWS, SPEED, TYPE etc
 		sTerm.code = cChr;
 		sTerm.optlen = 0;
 		SubState = tnetSUBST_OPTDAT;
-		break;
-	}
-	case tnetSUBST_OPT: {
-		vTelnetNegotiate(cChr, sTerm.code);
-		SubState = tnetSUBST_CHECK;
 		break;
 	}
 	case tnetSUBST_OPTDAT: {
