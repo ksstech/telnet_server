@@ -500,11 +500,22 @@ static void vTnetTask(void *pvParameters) {
 	vTaskDelete(NULL);
 }
 
+task_param_t sTelnetParam = {
+	.pxTaskCode = vTnetTask,
+	.pcName = "tnet",
+	.usStackDepth = tnetSTACK_SIZE,
+	.uxPriority = tnetPRIORITY,
+	.pxStackBuffer = tsbTNET,
+	.pxTaskBuffer = &ttsTNET,
+	.xCoreID = tskNO_AFFINITY,
+	.xMask = taskTNET_MASK,
+};
+
 void vTnetStartStop(void) {
 	if (ioB1GET(ioTNETstart)) {
-		xRtosClearTaskRUN(taskTNET_MASK);
-		xRtosClearTaskDELETE(taskTNET_MASK);
-		TnetHandle = xTaskCreateStaticPinnedToCore(vTnetTask, "tnet", tnetSTACK_SIZE, NULL, tnetPRIORITY, tsbTNET, &ttsTNET, tskNO_AFFINITY);
+		halEventUpdateRunTasks(taskTNET_MASK, 0);
+		halEventUpdateDeleteTasks(taskTNET_MASK, 0);
+		TnetHandle = xTaskCreateWithMask(&sTelnetParam, NULL);
 	} else {
 		vTaskSetTerminateFlags(taskTNET_MASK);
 	}
