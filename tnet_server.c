@@ -101,11 +101,11 @@ static void vTelnetUpdateStats(void) {
 
 static void vTelnetDeInit(void) {
 	if (sTerm.sCtx.sd > 0) xNetClose(&sTerm.sCtx);
-	xRtosClearStatus(flagTNET_CLNT);
+	halEventUpdateStat0(flagTNET_CLNT, 0);
 	sTerm.Running = 0;
 
 	if (sServTNetCtx.sd > 0) xNetClose(&sServTNetCtx);
-	xRtosClearStatus(flagTNET_SERV);
+	halEventUpdateStat0(flagTNET_SERV, 0);
 	State = tnetSTATE_INIT;
 	IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] deinit" strNL);
 }
@@ -365,12 +365,10 @@ static int xTelnetFlushBuf(void) {
  * @brief	Main TelNet task
  */
 static void vTnetTask(void *pvParameters) {
-	vTaskSetThreadLocalStoragePointer(NULL, buildFRTLSP_EVT_MASK, (void *)taskTNET_MASK);
 	int iRV = 0;
 	u8_t caChr[2];
 	State = tnetSTATE_INIT;
-	xRtosSetTaskRUN(taskTNET_MASK);
-
+	halEventUpdateRunTasks(taskTNET_MASK, 1);
 	while (bRtosTaskWaitOK(taskTNET_MASK, portMAX_DELAY)) {
 		if ((State != tnetSTATE_DEINIT) && xNetWaitLx(pdMS_TO_TICKS(tnetMS_CONNECT)) == 0) continue;
 		switch (State) {
@@ -400,7 +398,7 @@ static void vTnetTask(void *pvParameters) {
 				vTaskDelay(pdMS_TO_TICKS(tnetINTERVAL_MS));
 				break;
 			}
-			xRtosSetStatus(flagTNET_SERV);
+			halEventUpdateStat0(flagTNET_SERV, 1);
 			memset(&sTerm, 0, sizeof(tnet_con_t));
 			State = tnetSTATE_WAITING;
 			IF_PX(debugTRACK && ioB1GET(ioTNETtrack), "[TNET] waiting" strNL);
@@ -414,7 +412,7 @@ static void vTnetTask(void *pvParameters) {
 				}
 				break;
 			}
-			xRtosSetStatus(flagTNET_CLNT);
+			halEventUpdateStat0(flagTNET_CLNT, 1);
 
 			iRV = xNetSetRecvTO(&sTerm.sCtx, tnetINTERVAL_MS);	// setup timeout for processing options
 			if (iRV != erSUCCESS) {
@@ -485,7 +483,7 @@ static void vTnetTask(void *pvParameters) {
 			if (caChr[0] == CHR_GS) { State = tnetSTATE_DEINIT; break; }	// cntl + ']'
 			// Step 4: Ensure UARTx marked inactive, empty buffer if anything there
 			#if (configCONSOLE_UART > (-1))
-				clrSYSFLAGS(sfUXACTIVE);
+				halEventUpdateStat1(sfUXACTIVE, 1);
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
 			command_t sCmd = { .pCmd=&caChr[0], .sRprt.putc=xTelnetPutC, .sRprt.fEcho=1, .sRprt.fNoLock=1, .sRprt.uSGR=sgrANSI };
@@ -513,12 +511,12 @@ void vTnetStartStop(void) {
 }
 
 void vTnetReport(report_t *psR) {
-	if (xRtosCheckStatus(flagTNET_SERV)) {
+	if (xRtosCheckStat0(flagTNET_SERV)) {
 		xNetReport(psR, &sServTNetCtx, "TNsrv", 0, 0, 0);
 		wprintfx(psR, "\tFSM=%d  [maxTX=%u  maxRX=%u] [MaxX=%hu  MaxY=%hu]" strNL, State,
 						sServTNetCtx.maxTx, sServTNetCtx.maxRx, sTerm.ColX, sTerm.RowY);
 	}
-	if (xRtosCheckStatus(flagTNET_CLNT)) {
+	if (xRtosCheckStat0(flagTNET_CLNT)) {
 		xNetReport(psR, &sTerm.sCtx, "TNclt", 0, 0, 0);
 		if (debugTRACK && ioB1GET(ioTNETtrack)) {
 			wprintfx(psR, "%CTNopt%C\t", xpfCOL(colourFG_CYAN,0), xpfCOL(attrRESET,0));
