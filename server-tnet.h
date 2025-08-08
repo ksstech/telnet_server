@@ -1,15 +1,15 @@
-// tnet_server.h
+// server-tnet.h
 
 #pragma once
 
 #include "definitions.h"
+#include "report.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // ########################################### Macros ##############################################
-
 
 // ######################################### enumerations ##########################################
 
@@ -74,13 +74,19 @@ enum tnetSUBST {
 };
 
 // ########################################## structures ###########################################
+
+typedef struct param_tnet_t {
+    u8_t auth:1;
+    u8_t echo:1;
+    u8_t track:1;
+} param_tnet_t;
+
 // ######################################## global variables #######################################
 // ################################### GLOBAL Function Prototypes ##################################
 
-void vTnetStartStop(void);
+void vTnetStart(void * pvPara);
 
-struct report_t;
-void vTnetReport(struct report_t * psR);
+void vTnetReport(report_t * psR);
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
-// tnet_auth.c -Copyright (c) 2017-24 Andre M. Maree / KSS Technologies (Pty) Ltd.
+// tnet_auth.c -Copyright (c) 2017-25 Andre M. Maree / KSS Technologies (Pty) Ltd.
 
-#include "tnet_auth.h"
-#include "printfx.h"
+#include "server-tnet-auth.h"
+#include "report.h"
 #include "stdioX.h"
 #include "socketsX.h"
 #include "errors_events.h"
@@ -19,14 +19,18 @@
 
 int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bHide) {
 	char Buf[35];
-	if (pcPrompt) dprintfx(sd, pcPrompt);
+	if (pcPrompt)
+		dprintfx(sd, pcPrompt);
 	int iRV = xReadString(sd, Buf, sizeof(Buf), bHide);
-	if (iRV <= 0) return erFAILURE;
-	if (strcmp((char *) Buf, pcKey) != 0) return erFAILURE;
+	if (iRV <= 0)
+		return erFAILURE;
+	if (strcmp((char *) Buf, pcKey) != 0)
+		return erFAILURE;
 	return erSUCCESS;
 }
 
 int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bHide) {
-	if (xAutheticateObject(sd, "User: ", pcUsername, 1) != erSUCCESS) return erFAILURE;
+	if (xAutheticateObject(sd, "User: ", pcUsername, 1) != erSUCCESS)
+		return erFAILURE;
 	return xAutheticateObject(sd, "Pswd: ", pcPassword, bHide);
 }

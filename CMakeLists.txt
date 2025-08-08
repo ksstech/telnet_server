@@ -1,6 +1,6 @@
-# TELNET_SERVER
+# server-tnet
 
-set( srcs "tnet_auth.c" "tnet_server.c" )
+set( srcs "server-tnet-auth.c" "server-tnet.c" )
 set( include_dirs "." )
 set( priv_include_dirs )
 set( requires "main" )
