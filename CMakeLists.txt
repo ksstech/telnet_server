@@ -4,7 +4,7 @@ set( srcs "server-tnet-auth.c" "server-tnet.c" )
 set( include_dirs "." )
 set( priv_include_dirs )
 set( requires "main" )
-set( priv_requires )
+set( priv_requires "socketsX" )
 
 idf_component_register(
 	SRCS ${srcs}
