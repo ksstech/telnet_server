@@ -15,7 +15,7 @@
 #include "syslog.h"
 #include "server-tnet-auth.h"
 #include "server-tnet.h"
-#include "terminalX.h"
+#include "stdioX.h"
 
 #include <errno.h>
 
