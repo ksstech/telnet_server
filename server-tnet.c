@@ -121,12 +121,6 @@ static void vTelnetDeInit(void) {
 	IF_PX(debugTRACK && psParam->track, "[TNET] deinit" strNL);
 }
 
-static __attribute__((unused)) int xTelnetPutC(xp_t * psXP, int cChr) {
-	u8_t u8Chr = cChr;
-	int iRV = xNetSend(&sTerm.sCtx, &u8Chr, sizeof(u8Chr));
-	return (iRV == sizeof(u8Chr)) ? cChr : iRV; 
-}
-
 #if defined(printfxVER0)
 static int xTelnetWrite(xp_t * psXP, int iChr) {
 	char cChr = iChr;
@@ -513,7 +507,6 @@ static void vTnetTask(void * pvPara) {
 				vStdioConsoleSetStatus(0);				// disable output to console, force buffered for Telnet to grab
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
-//			static command_t sCmd = { .sRprt={ .hdlr=xTelnetPutC, .bHdlr=1, .XLock=sNONE, .uSGR=sgrANSI } };
 			static command_t sCmd = { .sRprt={ .hdlr=xTelnetWrite, .bHdlr=1, .XLock=sNONE, .uSGR=sgrANSI } };
 			sCmd.pCmd = &caChr[0];						// Changed in vCommandInterpret()
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
