@@ -468,7 +468,7 @@ static void vTnetTask(void * pvPara) {
 					IF_PX(debugTRACK && psParam->track, "[TNET] read fail (%d)" strNL, sTerm.sCtx.error);
 				} else {
 				#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
-					iRV = xStdOutBufFlush(xTelnetFlushBuf);	
+					iRV = xStdOutBufFlush(xTelnetWrite); // flush any buffered output
 					if (iRV < erSUCCESS)
 						State = tnetSTATE_DEINIT;
 				#endif
