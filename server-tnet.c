@@ -499,7 +499,7 @@ static void vTnetTask(void * pvPara) {
 				State = tnetSTATE_DEINIT;
 				break;
 			}
-			// Step 4: Ensure UARTx marked inactive, empty buffer if anything there
+			// Step 4: Ensure UARTx marked inactive so output goes to buffer
 			#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
 				vStdioConsoleSetStatus(0);				// disable output to console, force buffered for Telnet to grab
 			#endif
