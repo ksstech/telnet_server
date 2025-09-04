@@ -504,8 +504,8 @@ static void vTnetTask(void * pvPara) {
 				vStdioConsoleSetStatus(0);				// disable output to console, force buffered for Telnet to grab
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
-			static command_t sCmd = { .sRprt={ .hdlr=xTelnetWrite, .bHdlr=1, .XLock=sNONE, .uSGR=sgrANSI } };
 			sCmd.pCmd = &caChr[0];						// Changed in vCommandInterpret()
+			static command_t sCmd = { .sRprt={ .hdlr = xTelnetPutC, .bHdlr = 1, .XLock = sNONE, .uSGR = sgrANSI } };
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
 			vStdioSetMaxRowYColX(NULL, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
 			xCommandProcess(&sCmd);
