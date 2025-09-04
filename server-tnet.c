@@ -121,12 +121,6 @@ static void vTelnetDeInit(void) {
 	IF_PX(debugTRACK && psParam->track, "[TNET] deinit" strNL);
 }
 
-#if defined(printfxVER0)
-//	static int xTelnetWrite(xp_t * psXP, int iChr) { char cChr = iChr; return xNetSend(&sTerm.sCtx, (u8_t *) &cChr, 1); }
-#elif defined(printfxVER1)
-	static int xTelnetWrite(xp_t * psXP, const char * pStr, size_t xLen) { return xNetSend(&sTerm.sCtx, (u8_t *) pStr, xLen); }
-#endif
-
 static const char *xTelnetFindName(u8_t opt) {
 	u8_t idx;
 	for (idx = 0; options.val[idx] != tnetOPT_UNDEF; ++idx) {
@@ -348,30 +342,20 @@ static int xTelnetSetBaseline(void) {
 	return erSUCCESS;
 }
 
-/**
- * @brief	send any/all buffered data to client
- * @return	0 (nothing to send), > 0 (bytes successfully sent) else < 0 (error code)
- */
-#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
-static int xTelnetFlushBuf(void) {
-	int iRV = 0, Count = 0;
-	while (xStdOutBufAvail() > 0) {
-		iRV = xStdOutBufGetC();
-		if (iRV < sizeof(u8_t))
-			break;
-		u8_t cChr = iRV;
-		iRV = xNetSend(&sTerm.sCtx, &cChr, sizeof(cChr));
-		if (iRV < sizeof(u8_t))
-			break;
-		++Count;
-	}
-	if (Count)
+ssize_t xTelnetWrite(const void * pVoid, size_t Size) {
+	int iRV = xNetSend(&sTerm.sCtx, (u8_t *) pVoid, Size);
+	if (iRV > 0)
 		xTelnetHandleSGA();
 	if (iRV < 0)
 		State = tnetSTATE_DEINIT;
-	return Count;
+	return iRV;
 }
-#endif
+
+int xTelnetPutC(xp_t * psXP, int iChr) { 
+	u8_t cChr = iChr;
+	int iRV = xTelnetWrite(&cChr, 1);
+	return (iRV == 1) ? iChr : iRV;
+}
 
 /**
  * @brief	Main TelNet task
