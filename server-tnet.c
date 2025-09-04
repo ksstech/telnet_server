@@ -495,7 +495,7 @@ static void vTnetTask(void * pvPara) {
 					IF_PX(debugTRACK && psParam->track, "[TNET] read fail (%d)" strNL, sTerm.sCtx.error);
 				} else {
 				#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
-					iRV = xTelnetFlushBuf();
+					iRV = xStdOutBufFlush(xTelnetFlushBuf);	
 					if (iRV < erSUCCESS)
 						State = tnetSTATE_DEINIT;
 				#endif
@@ -512,16 +512,16 @@ static void vTnetTask(void * pvPara) {
 			}
 			// Step 4: Ensure UARTx marked inactive, empty buffer if anything there
 			#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
-				serial_set_console_status(0);			// disable output to console, force buffered for Telnet to grab
+				vStdioConsoleSetStatus(0);				// disable output to console, force buffered for Telnet to grab
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
 //			static command_t sCmd = { .sRprt={ .hdlr=xTelnetPutC, .bHdlr=1, .XLock=sNONE, .uSGR=sgrANSI } };
 			static command_t sCmd = { .sRprt={ .hdlr=xTelnetWrite, .bHdlr=1, .XLock=sNONE, .uSGR=sgrANSI } };
 			sCmd.pCmd = &caChr[0];						// Changed in vCommandInterpret()
-			stdio_push_max_rowY_colX(&sTI);				// push/save current MaxXY values (UART)
-			stdio_set_max_rowY_colX(&sTI, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
+			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
+			vStdioSetMaxRowYColX(NULL, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
 			xCommandProcess(&sCmd);
-			stdio_pull_max_rowY_colX(&sTI);				// pull/restore original MaxXY values (UART)
+			vStdioPullMaxRowYColX(NULL);				// pull/restore original MaxXY values (UART)
 			break;
 		}
 		default: IF_myASSERT(debugTRACK, 0);
