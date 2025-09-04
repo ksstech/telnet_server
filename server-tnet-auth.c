@@ -21,7 +21,7 @@ int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool b
 	char Buf[35];
 	if (pcPrompt)
 		dprintfx(sd, pcPrompt);
-	int iRV = xReadString(sd, Buf, sizeof(Buf), bHide);
+	int iRV = xStdioGetString(sd, Buf, sizeof(Buf), bHide);
 	if (iRV <= 0)
 		return erFAILURE;
 	if (strcmp((char *) Buf, pcKey) != 0)
