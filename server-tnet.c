@@ -133,9 +133,7 @@ static int xTelnetWrite(xp_t * psXP, int iChr) {
 	return xNetSend(&sTerm.sCtx, (u8_t *) &cChr, 1);
 }
 #elif defined(printfxVER1)
-static int xTelnetWrite(xp_t * psXP, const char * pStr, size_t xLen) {
-	return xNetSend(&sTerm.sCtx, (u8_t *) pStr, xLen);
-}
+	static int xTelnetWrite(xp_t * psXP, const char * pStr, size_t xLen) { return xNetSend(&sTerm.sCtx, (u8_t *) pStr, xLen); }
 #endif
 
 static const char *xTelnetFindName(u8_t opt) {
