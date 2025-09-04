@@ -164,6 +164,23 @@ static u8_t xTelnetGetOption(u8_t opt) {
 }
 
 /**
+ * @brief	
+ * @return	erSUCCESS or erFAILURE
+ */
+int xTelnetHandleSGA(void) {
+	int iRV = xTelnetGetOption(tnetOPT_SGA);
+	if (iRV == valDONT || iRV == valWONT) {
+		u8_t cGA = tnetGA;
+		iRV = xNetSend(&sTerm.sCtx, &cGA, sizeof(cGA));
+		if (iRV != sizeof(cGA)) {
+			vTelnetDeInit();
+			return erFAILURE;
+		}
+	}
+	return erSUCCESS;
+}
+
+/**
  * @brief	send a single option to the client
  * @param	opt - Option
  * @param	cmd - Value
@@ -336,23 +353,6 @@ static int xTelnetSetBaseline(void) {
  * @return	0 (nothing to send), > 0 (bytes successfully sent) else < 0 (error code)
  */
 #if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
-/**
- * @brief	
- * @return	erSUCCESS or erFAILURE
- */
-static int xTelnetHandleSGA(void) {
-	int iRV = xTelnetGetOption(tnetOPT_SGA);
-	if (iRV == valDONT || iRV == valWONT) {
-		u8_t cGA = tnetGA;
-		iRV = xNetSend(&sTerm.sCtx, &cGA, sizeof(cGA));
-		if (iRV != sizeof(cGA)) {
-			vTelnetDeInit();
-			return erFAILURE;
-		}
-	}
-	return erSUCCESS;
-}
-
 static int xTelnetFlushBuf(void) {
 	int iRV = 0, Count = 0;
 	while (xStdOutBufAvail() > 0) {
