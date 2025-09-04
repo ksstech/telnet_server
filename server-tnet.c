@@ -505,6 +505,7 @@ static void vTnetTask(void * pvPara) {
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
 			static command_t sCmd = { .sRprt={ .hdlr = xTelnetPutC, .bHdlr = 1, .XLock = sNONE, .uSGR = sgrANSI } };
+			caChr[1] = CHR_NUL;							// ensure NULL terminated
 			sCmd.pCmd = caChr;							// Changed in vCommandInterpret()
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
 			vStdioSetMaxRowYColX(NULL, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
