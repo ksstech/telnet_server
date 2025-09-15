@@ -467,7 +467,7 @@ static void vTnetTask(void * pvPara) {
 					State = tnetSTATE_DEINIT;
 					IF_PX(debugTRACK && psParam->track, "[TNET] read fail (%d)" strNL, sTerm.sCtx.error);
 				} else {
-				#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
+				#if (configCONSOLE_UART > -1 && cmakeWRAP_STDIO == 1)
 					iRV = xStdOutBufFlush(xTelnetWrite); // flush any buffered output
 					if (iRV < erSUCCESS)
 						State = tnetSTATE_DEINIT;
@@ -484,7 +484,7 @@ static void vTnetTask(void * pvPara) {
 				break;
 			}
 			// Step 4: Ensure UARTx marked inactive so output goes to buffer
-			#if (configCONSOLE_UART > -1 && appWRAP_STDIO == 1)
+			#if (configCONSOLE_UART > -1 && cmakeWRAP_STDIO == 1)
 				vStdioConsoleSetStatus(0);				// disable output to console, force buffered for Telnet to grab
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
