@@ -351,13 +351,18 @@ ssize_t xTelnetWrite(const void * pVoid, size_t Size) {
 	return iRV;
 }
 
-int xTelnetPrintf(xp_t * psXP, const char * pcSrc, size_t sSrc) { return xTelnetWrite(pcSrc, sSrc); }
 
-int xTelnetPutC(xp_t * psXP, int iChr) { 
-	u8_t cChr = iChr;
-	int iRV = xTelnetWrite(&cChr, 1);
-	return (iRV == 1) ? iChr : iRV;
-}
+#if defined(printfxVER0)
+	static int xTelnetPutC(xp_t * psXP, int iChr) { 
+		u8_t cChr = iChr;
+		int iRV = xTelnetWrite(&cChr, 1);
+		return (iRV == 1) ? iChr : iRV;
+	}
+#elif defined(printfxVER1)
+	int xTelnetPutBuf(xp_t * psXP, const char * pcSrc, size_t sSrc) {
+		return xTelnetWrite(pcSrc, sSrc);
+	}
+#endif
 
 /**
  * @brief	Main TelNet task
@@ -490,11 +495,11 @@ static void vTnetTask(void * pvPara) {
 				vStdioConsoleSetStatus(0);				// disable output to console, force buffered for Telnet to grab
 			#endif
 			// Step 5: must be a normal command character, process as if from UART console....
-#if defined(printfxVER0)
-			static command_t sCmd = { .sRprt={ .hdlr = xTelnetPutC, .bHdlr = 1, .XLock = sNONE, .uSGR = sgrANSI } };
-#elif defined(printfxVER1)
-			static command_t sCmd = { .sRprt={ .hdlr = xTelnetPrintf, .bHdlr = 1, .XLock = sNONE, .uSGR = sgrANSI } };
-#endif
+			#if defined(printfxVER0)
+				command_t sCmd = { .sRprt={ .hdlr = xTelnetPutC, .bHdlr = 1, .XLock = sNONE, .uSGR = sgrANSI } };
+			#elif defined(printfxVER1)
+				command_t sCmd = { .sRprt={ .hdlr = xTelnetPutBuf, .bHdlr = 1, .XLock = sNONE, .uSGR = sgrANSI } };
+			#endif
 			caChr[1] = CHR_NUL;							// ensure NULL terminated
 			sCmd.pCmd = caChr;							// Changed in vCommandInterpret()
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
