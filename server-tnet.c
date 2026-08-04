@@ -502,6 +502,10 @@ static void vTnetTask(void * pvPara) {
 			#endif
 			caChr[1] = CHR_NUL;							// ensure NULL terminated
 			sCmd.pCmd = caChr;							// Changed in vCommandInterpret()
+			/* Privileged ONLY if xAuthenticate() actually ran and passed - a failure never reaches
+			 * tnetSTATE_RUNNING. With ioTNETauth at its default 0, sTerm.auth is 0, so telnet is
+			 * never privileged and the PSK stays readable over UART only. */
+			sCmd.Priv = sTerm.auth ? 1 : 0;
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
 			vStdioSetMaxRowYColX(NULL, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
 			xCommandProcess(&sCmd);
