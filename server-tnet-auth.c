@@ -1,4 +1,4 @@
-// tnet_auth.c -Copyright (c) 2017-25 Andre M. Maree / KSS Technologies (Pty) Ltd.
+// tnet_auth.c -Copyright (c) 2017-26 Andre M. Maree / KSS Technologies (Pty) Ltd.
 
 #include "server-tnet-auth.h"
 #include "report.h"
@@ -17,20 +17,20 @@
 
 // ######################################## Public functions #######################################
 
-int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bHide) {
+int	xAutheticateObject(int sd, const char * pcPrompt, const char * pcKey, bool bEcho, u32_t msTO) {
 	char Buf[35];
 	if (pcPrompt)
 		dprintfx(sd, pcPrompt);
-	int iRV = xStdioGetString(sd, Buf, sizeof(Buf), bHide);
-	if (iRV <= 0)
+	int iRV = xStdioGetString(sd, Buf, sizeof(Buf), bEcho, msTO);
+	if (iRV <= 0)									// erTIMEOUT, erFAILURE or an empty line
 		return erFAILURE;
 	if (strcmp((char *) Buf, pcKey) != 0)
 		return erFAILURE;
 	return erSUCCESS;
 }
 
-int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bHide) {
-	if (xAutheticateObject(sd, "User: ", pcUsername, 1) != erSUCCESS)
+int	xAuthenticate(int sd, const char * pcUsername, const char * pcPassword, bool bEcho, u32_t msTO) {
+	if (xAutheticateObject(sd, "User: ", pcUsername, 1, msTO) != erSUCCESS)
 		return erFAILURE;
-	return xAutheticateObject(sd, "Pswd: ", pcPassword, bHide);
+	return xAutheticateObject(sd, "Pswd: ", pcPassword, bEcho, msTO);
 }

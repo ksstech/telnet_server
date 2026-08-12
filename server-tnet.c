@@ -1,4 +1,4 @@
-// server-tnet.c - Copyright (c) 2017-25 Andre M. Maree / KSS Technologies (Pty) Ltd.
+// server-tnet.c - Copyright (c) 2017-26 Andre M. Maree / KSS Technologies (Pty) Ltd.
 
 #include "hal_platform.h"
 
@@ -42,7 +42,7 @@
 #define tnetINTERVAL_MS 			100
 #define tnetMS_CONNECT				100
 #define tnetMS_READ_WRITE			70
-#define tnetAUTHENTICATE			0
+#define tnetMS_AUTHEN				30000	// per prompt (User:/Pswd:), so 60s worst case
 
 // ########################################## structures ###########################################
 
@@ -457,23 +457,15 @@ static void vTnetTask(void * pvPara) {
 			IF_PX(debugTRACK && psParam->track, "[TNET] options ok" strNL);
 		}	/* FALLTHRU */ /* no break */
 		case tnetSTATE_AUTHEN: {
-			/* Test psParam->auth - where xAppOptionTelnet() puts ioTNETauth - NOT sTerm.auth.
-			 * sTerm is the per-CONNECTION state, memset to 0 for every new connection and never
-			 * assigned, so the old test was permanently false: the prompt never appeared however
-			 * ioTNETauth was set. Its siblings psParam->echo (same line) and psParam->track (used
-			 * throughout) were always read correctly - auth was the one that reached into the
-			 * wrong struct. sTerm.auth is now what it always should have been: proof that THIS
-			 * connection authenticated, set only after xAuthenticate() passes, and read by
-			 * sCmd.Priv below. */
-			if (psParam->auth) {
-				if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, psParam->echo) != erSUCCESS) {
-					if (errno != EAGAIN) {
-						State = tnetSTATE_DEINIT;
-						IF_PX(debugTRACK && psParam->track, "[TNET] authen fail (%d)" strNL, sTerm.sCtx.error);
-					}
+			if (psParam->auth) {						// only if authorization is required, prompt for UN:PW
+				if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, psParam->echo, tnetMS_AUTHEN) != erSUCCESS) {
+					State = tnetSTATE_DEINIT;		// drop the connection
+					IF_PX(debugTRACK && psParam->track, "[TNET] authen fail (%d)" strNL, sTerm.sCtx.error);
 					break;
 				}
 				sTerm.auth = 1;							// authenticated: this connection is privileged
+			} else {
+				// sTerm.auth remain 0 but connection accepted.
 			}
 			IF_PX(debugTRACK && psParam->track, "[TNET] auth %s" strNL, sTerm.auth ? "PASS" : "Skip");
 			State = tnetSTATE_RUNNING;
@@ -513,12 +505,7 @@ static void vTnetTask(void * pvPara) {
 			#endif
 			caChr[1] = CHR_NUL;							// ensure NULL terminated
 			sCmd.pCmd = caChr;							// Changed in vCommandInterpret()
-			/* Privileged ONLY if xAuthenticate() actually ran and PASSED: sTerm.auth is set at
-			 * the end of tnetSTATE_AUTHEN, and a failure there never reaches this state.
-			 * The previous comment here claimed sTerm.auth tracked ioTNETauth - it did not, and
-			 * nothing assigned it at all, so this was permanently 0 AND the prompt never appeared.
-			 * With ioTNETauth 0 telnet stays unprivileged, which is still the default. */
-			sCmd.Priv = sTerm.auth ? 1 : 0;
+			sCmd.Priv = sTerm.auth;
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
 			vStdioSetMaxRowYColX(NULL, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
 			xCommandProcess(&sCmd);
