@@ -141,7 +141,7 @@ static void xTelnetSetOption(u8_t opt, u8_t val) {
 	IF_PX(debugSETOPT, "[set o=%s v=%s] ", xTelnetFindName(opt), codename[val]);
 	u8_t Xidx = opt / 4;	   // 2 bits/value, 4 options/byte
 	u8_t Sidx = (opt % 4) * 2; // positions (0/2/4/6) to shift mask & value left
-	sTerm.options[Xidx] &= 0x03 << Sidx;
+	sTerm.options[Xidx] &= ~(0x03 << Sidx);				// clear this option's 2 bits, leave the other 3 options
 	sTerm.options[Xidx] |= val << Sidx;
 }
 
