@@ -57,6 +57,13 @@ typedef struct tnet_con_t {
 	u8_t optlen;
 	u8_t code;
 	u8_t options[(tnetOPT_MAX_VAL + 3) / 4];
+	/* Credential accumulator, tnetSTATE_AUTHEN only. Deliberately NOT shared with optdata[]:
+	 * every byte now passes through xTelnetParseChar() first, so a client IAC SB (NAWS on a
+	 * window resize) would zero optlen and overwrite optdata mid-entry - silent credential
+	 * corruption. optdata is only free when the SB parser cannot run, which is no longer true. */
+	u8_t authbuf[35];
+	u8_t authlen;
+	u32_t authDL;										// tick deadline for the whole exchange
 	union { // internal flags
 		struct __attribute__((packed)) {
 			u8_t TxNow:1;
@@ -64,7 +71,9 @@ typedef struct tnet_con_t {
             u8_t auth:1;
             u8_t echo:1;
             u8_t track:1;
-            u8_t spare:3;
+            u8_t apswd:1;							// 0 = collecting username, 1 = password
+            u8_t aok:1;								// username matched
+            u8_t spare:1;
 		};
 		u8_t flag;
 	};
@@ -74,6 +83,8 @@ typedef struct tnet_con_t {
 // ##################################### Private/Static variables ##################################
 
 const char *const codename[4] = {"WILL", "WONT", "DO", "DONT"};
+
+static const u8_t cAuthBS[3] = { CHR_BS, CHR_SPACE, CHR_BS };	// erase one echoed character
 
 opts_t options = {
 	.val[0] = tnetOPT_ECHO,		.name[0] = "Echo",
@@ -454,22 +465,68 @@ static void vTnetTask(void * pvPara) {
 			}
 			State = tnetSTATE_AUTHEN; // no char, start authenticate
 			SubState = tnetSUBST_CHECK;
-			IF_PX(debugTRACK && psParam->track, "[TNET] options ok" strNL);
-		}	/* FALLTHRU */ /* no break */
-		case tnetSTATE_AUTHEN: {
-			if (psParam->auth) {						// only if authorization is required, prompt for UN:PW
-				if (xAuthenticate(sTerm.sCtx.sd, configUSERNAME, configPASSWORD, psParam->echo, tnetMS_AUTHEN) != erSUCCESS) {
-					State = tnetSTATE_DEINIT;		// drop the connection
-					IF_PX(debugTRACK && psParam->track, "[TNET] authen fail (%d)" strNL, sTerm.sCtx.error);
-					break;
-				}
-				sTerm.auth = 1;							// authenticated: this connection is privileged
-			} else {
-				// sTerm.auth remain 0 but connection accepted.
+			if (psParam->auth) {						// arm the budget and prompt ONCE, on entry
+				sTerm.authDL = xTaskGetTickCount() + pdMS_TO_TICKS(tnetMS_AUTHEN);
+				xTelnetWrite("User: ", 6);				// via xTelnetWrite so GA is handled
 			}
-			IF_PX(debugTRACK && psParam->track, "[TNET] auth %s" strNL, sTerm.auth ? "PASS" : "Skip");
-			State = tnetSTATE_RUNNING;
-		}	/* FALLTHRU */ /* no break */
+			IF_PX(debugTRACK && psParam->track, "[TNET] options ok" strNL);
+			break;										// AUTHEN no longer blocks, re-enter cleanly
+		}
+		/* AUTHENticate a character at a time THROUGH the telnet parser. RFC854 allows option
+		 * negotiation at ANY point in the stream, so IAC arriving mid-credential must be handled,
+		 * not consumed as data and echoed back where the client reads it as our command. */
+		case tnetSTATE_AUTHEN: {
+			if (psParam->auth == 0) {					// not required, accept as unprivileged
+				IF_PX(debugTRACK && psParam->track, "[TNET] auth Skip" strNL);
+				State = tnetSTATE_RUNNING;
+				break;
+			}
+			iRV = xNetRecv(&sTerm.sCtx, caChr, 1);
+			if (iRV != 1) {
+				if (sTerm.sCtx.error != EAGAIN) {		// socket closed or error
+					State = tnetSTATE_DEINIT;
+					IF_PX(debugTRACK && psParam->track, "[TNET] authen read (%d)" strNL, sTerm.sCtx.error);
+				} else if ((i32_t) (xTaskGetTickCount() - sTerm.authDL) >= 0) {
+					State = tnetSTATE_DEINIT;			// budget expired, wrap safe comparison
+					IF_PX(debugTRACK && psParam->track, "[TNET] authen timeout" strNL);
+				}
+				break;
+			}
+			if (xTelnetParseChar(caChr[0]) == erSUCCESS)
+				break;									// telnet protocol byte, NOT credential data
+			if (caChr[0] == CHR_NUL)
+				break;									// CR NUL, swallow the NUL
+			if (caChr[0] == CHR_CR || caChr[0] == CHR_LF) {
+				if (sTerm.authlen == 0)
+					break;								// leading terminator from the previous line
+				sTerm.authbuf[sTerm.authlen] = 0;
+				xTelnetWrite(strNL, strlen(strNL));
+				if (sTerm.apswd == 0) {					// username complete, ALWAYS prompt for the
+					sTerm.aok = (strcmp((char *) sTerm.authbuf, configUSERNAME) == 0) ? 1 : 0;
+					sTerm.apswd = 1;					//  password so a wrong name is not disclosed
+					memset(sTerm.authbuf, 0, sizeof(sTerm.authbuf));
+					sTerm.authlen = 0;
+					xTelnetWrite("Pswd: ", 6);
+				} else {								// password complete, decide
+					int Pass = sTerm.aok && (strcmp((char *) sTerm.authbuf, configPASSWORD) == 0);
+					memset(sTerm.authbuf, 0, sizeof(sTerm.authbuf));	// do NOT leave it in RAM
+					sTerm.authlen = 0;
+					sTerm.auth = Pass ? 1 : 0;
+					State = Pass ? tnetSTATE_RUNNING : tnetSTATE_DEINIT;
+					IF_PX(debugTRACK && psParam->track, "[TNET] auth %s" strNL, Pass ? "PASS" : "FAIL");
+				}
+			} else if (caChr[0] == CHR_BS) {			// correct typo
+				if (sTerm.authlen > 0) {
+					--sTerm.authlen;
+					xNetSend(&sTerm.sCtx, (u8_t *) cAuthBS, sizeof(cAuthBS));
+				}
+			} else if (sTerm.authlen < (sizeof(sTerm.authbuf) - 1) && INRANGE(CHR_SPACE, caChr[0], CHR_TILDE)) {
+				sTerm.authbuf[sTerm.authlen++] = caChr[0];
+				u8_t cEcho = (sTerm.apswd && psParam->echo == 0) ? CHR_ASTERISK : caChr[0];
+				xNetSend(&sTerm.sCtx, &cEcho, 1);		// raw: per character GA would be noise
+			}
+			break;
+		}
 		case tnetSTATE_RUNNING: {
 			iRV = xNetRecv(&sTerm.sCtx, caChr, 1);		// Step 1: read a single character
 			if (iRV != 1) {
