@@ -563,6 +563,7 @@ static void vTnetTask(void * pvPara) {
 			caChr[1] = CHR_NUL;							// ensure NULL terminated
 			sCmd.pCmd = caChr;							// Changed in vCommandInterpret()
 			sCmd.Priv = sTerm.auth;
+			sCmd.Src = cmdSRC_TNET;					// syntax errors reported at NOTICE, not ERROR
 			vStdioPushMaxRowYColX(NULL);				// push/save current MaxXY values (UART)
 			vStdioSetMaxRowYColX(NULL, sTerm.RowY, sTerm.ColX);// set new MaxXY values (Telnet)
 			xCommandProcess(&sCmd);
